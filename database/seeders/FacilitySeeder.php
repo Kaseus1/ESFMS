@@ -1,0 +1,173 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\Facility;
+use Illuminate\Support\Facades\Storage;
+
+class FacilitySeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $facilities = [
+            [
+                'name' => 'Main Conference Room',
+                'type' => 'conference_room',
+                'location' => 'Building A, Floor 2',
+                'capacity' => 20,
+                'max_capacity' => 30,
+                'description' => 'A spacious conference room equipped with a large projector, whiteboard, and comfortable seating for up to 30 people. Perfect for team meetings, client presentations, and workshops.',
+                'image' => 'facilities/conference-room-1.jpg',
+                'opening_time' => '08:00',
+                'closing_time' => '18:00',
+                'is_public' => true,
+                'guest_accessible' => true,
+                'buffer_time' => 15,
+                'status' => true,
+            ],
+            [
+                'name' => 'Executive Boardroom',
+                'type' => 'conference_room',
+                'location' => 'Building B, Floor 1',
+                'capacity' => 15,
+                'max_capacity' => 20,
+                'description' => 'Premium boardroom with state-of-the-art AV equipment, video conferencing capabilities, and executive-style furniture. Ideal for high-level meetings and strategic discussions.',
+                'image' => 'facilities/boardroom-1.jpg',
+                'opening_time' => '07:00',
+                'closing_time' => '20:00',
+                'is_public' => true,
+                'guest_accessible' => false,
+                'buffer_time' => 30,
+                'status' => true,
+            ],
+            [
+                'name' => 'Auditorium Hall',
+                'type' => 'auditorium',
+                'location' => 'Main Building, Floor 1',
+                'capacity' => 200,
+                'max_capacity' => 250,
+                'description' => 'Large auditorium with tiered seating, professional sound system, and multiple projection screens. Perfect for seminars, conferences, and large presentations.',
+                'image' => 'facilities/auditorium-1.jpg',
+                'opening_time' => '06:00',
+                'closing_time' => '22:00',
+                'is_public' => true,
+                'guest_accessible' => true,
+                'buffer_time' => 45,
+                'status' => true,
+            ],
+            [
+                'name' => 'Computer Lab A',
+                'type' => 'laboratory',
+                'location' => 'Tech Building, Floor 2',
+                'capacity' => 25,
+                'max_capacity' => 30,
+                'description' => 'Modern computer laboratory with 30 high-performance workstations, dual monitors, and specialized software for programming and design courses.',
+                'image' => 'facilities/computer-lab-1.jpg',
+                'opening_time' => '07:30',
+                'closing_time' => '21:00',
+                'is_public' => false,
+                'guest_accessible' => false,
+                'buffer_time' => 15,
+                'status' => true,
+            ],
+            [
+                'name' => 'Science Laboratory',
+                'type' => 'laboratory',
+                'location' => 'Science Building, Floor 1',
+                'capacity' => 20,
+                'max_capacity' => 25,
+                'description' => 'Fully equipped science lab with safety equipment, fume hoods, microscopes, and all necessary apparatus for chemistry and biology experiments.',
+                'image' => 'facilities/science-lab-1.jpg',
+                'opening_time' => '08:00',
+                'closing_time' => '18:00',
+                'is_public' => false,
+                'guest_accessible' => false,
+                'buffer_time' => 30,
+                'status' => true,
+            ],
+            [
+                'name' => 'Basketball Court',
+                'type' => 'sports_facility',
+                'location' => 'Sports Complex',
+                'capacity' => 50,
+                'max_capacity' => 100,
+                'description' => 'Professional basketball court with scoreboards, proper lighting, and spectator seating. Available for both recreational and competitive games.',
+                'image' => 'facilities/basketball-court-1.jpg',
+                'opening_time' => '06:00',
+                'closing_time' => '22:00',
+                'is_public' => true,
+                'guest_accessible' => true,
+                'buffer_time' => 15,
+                'status' => true,
+            ],
+            [
+                'name' => 'Meeting Room Alpha',
+                'type' => 'meeting_room',
+                'location' => 'Building C, Floor 1',
+                'capacity' => 8,
+                'max_capacity' => 12,
+                'description' => 'Intimate meeting room with comfortable chairs, flip chart, and video conferencing setup. Perfect for small team discussions and one-on-one meetings.',
+                'image' => 'facilities/meeting-room-alpha-1.jpg',
+                'opening_time' => '08:00',
+                'closing_time' => '19:00',
+                'is_public' => true,
+                'guest_accessible' => true,
+                'buffer_time' => 10,
+                'status' => true,
+            ],
+            [
+                'name' => 'Study Commons',
+                'type' => 'common_area',
+                'location' => 'Library Building, Floor 2',
+                'capacity' => 40,
+                'max_capacity' => 50,
+                'description' => 'Quiet study area with individual carrels, group study tables, and access to reference materials. Open 24/7 during exam periods.',
+                'image' => 'facilities/study-commons-1.jpg',
+                'opening_time' => '07:00',
+                'closing_time' => '23:00',
+                'is_public' => true,
+                'guest_accessible' => true,
+                'buffer_time' => 0,
+                'status' => true,
+            ],
+            [
+                'name' => 'Outdoor Pavilion',
+                'type' => 'outdoor_space',
+                'location' => 'Central Campus',
+                'capacity' => 50,
+                'max_capacity' => 100,
+                'description' => 'Beautiful outdoor pavilion with picnic tables, electrical outlets, and weather protection. Perfect for casual meetings, lunch breaks, and social events.',
+                'image' => 'facilities/outdoor-pavilion-1.jpg',
+                'opening_time' => '06:00',
+                'closing_time' => '22:00',
+                'is_public' => true,
+                'guest_accessible' => true,
+                'buffer_time' => 15,
+                'status' => true,
+            ],
+            [
+                'name' => 'Event Hall',
+                'type' => 'event_hall',
+                'location' => 'Event Center, Ground Floor',
+                'capacity' => 150,
+                'max_capacity' => 200,
+                'description' => 'Versatile event hall that can be configured for various purposes. Equipped with staging area, catering facilities, and adjustable lighting.',
+                'image' => 'facilities/event-hall-1.jpg',
+                'opening_time' => '08:00',
+                'closing_time' => '23:00',
+                'is_public' => true,
+                'guest_accessible' => true,
+                'buffer_time' => 60,
+                'status' => true,
+            ],
+        ];
+
+        foreach ($facilities as $facilityData) {
+            Facility::create($facilityData);
+        }
+    }
+}

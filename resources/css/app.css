@@ -1,0 +1,22 @@
+/* --------------------- */
+/* Tailwind: keep these first to preserve your system design */
+/* --------------------- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --------------------- */
+/* FullCalendar CSS: after Tailwind to style only calendar */
+/* --------------------- */
+@import "@fullcalendar/core/main.css";
+@import "@fullcalendar/daygrid/main.css";
+@import "@fullcalendar/timegrid/main.css";
+
+/* Optional: custom calendar tweaks */
+#calendar {
+    max-width: 100%;
+    margin: 0 auto;
+
+
+    
+}
