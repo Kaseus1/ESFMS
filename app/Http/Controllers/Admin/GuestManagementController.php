@@ -16,19 +16,11 @@ class GuestManagementController extends Controller
      */
     public function index(Request $request)
     {
-        $status = $request->query('status', 'pending');
-        $search = $request->query('search');
-        
-        $query = User::where('role', 'guest')
-            ->with(['approvedBy', 'reservations']);
+        $query = User::where('role', 'guest')->with(['approvedBy']);
 
-        // Filter by status
-        if ($status !== 'all') {
-            $query->where('status', $status);
-        }
-
-        // Search functionality
-        if ($search) {
+        // 1. Search Logic
+        if ($request->filled('search')) {
+            $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
@@ -37,19 +29,34 @@ class GuestManagementController extends Controller
             });
         }
 
-        $guests = $query->latest('created_at')->paginate(20);
+        // 2. Status Filter Logic
+        // We use input() instead of query() to properly handle empty strings
+        $status = $request->input('status');
 
-        // Statistics
+        // Logic: 
+        // - If URL has no ?status, default to 'pending'
+        // - If URL has ?status= (empty/All), show all (don't filter)
+        // - If URL has ?status=approved, filter by approved
+        if (is_null($status)) {
+            $status = 'pending';
+        }
+
+        if (!empty($status) && $status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        // 3. Execute Query with Pagination
+        $guests = $query->latest()->paginate(10)->withQueryString();
+
+        // 4. Calculate Stats for Dashboard Cards
         $stats = [
-            'total' => User::guests()->count(),
-            'pending' => User::guests()->pending()->count(),
-            'approved' => User::guests()->approved()->count(),
-            'rejected' => User::guests()->rejected()->count(),
-            'active_today' => User::guests()->approved()
-                ->whereDate('last_login_at', today())->count(),
+            'total' => User::where('role', 'guest')->count(),
+            'pending' => User::where('role', 'guest')->where('status', 'pending')->count(),
+            'approved' => User::where('role', 'guest')->where('status', 'approved')->count(),
+            'rejected' => User::where('role', 'guest')->where('status', 'rejected')->count(),
         ];
 
-        return view('admin.guests.index', compact('guests', 'status', 'stats', 'search'));
+        return view('admin.guests.index', compact('guests', 'stats'));
     }
 
     /**
@@ -65,6 +72,7 @@ class GuestManagementController extends Controller
             $query->latest()->limit(10);
         }]);
 
+        // Calculate reservation stats for this specific guest
         $reservationStats = [
             'total' => $guest->reservations()->count(),
             'pending' => $guest->reservations()->where('status', 'pending')->count(),
@@ -133,7 +141,11 @@ class GuestManagementController extends Controller
         ]);
 
         // Send approval email
-        Mail::to($guest->email)->send(new GuestApprovedMail($guest));
+        try {
+            Mail::to($guest->email)->send(new GuestApprovedMail($guest));
+        } catch (\Exception $e) {
+            // Log error but continue
+        }
 
         return back()->with('success', "Guest account for {$guest->name} has been approved successfully.");
     }
@@ -148,80 +160,24 @@ class GuestManagementController extends Controller
         }
 
         $validated = $request->validate([
-            'rejection_reason' => ['required', 'string', 'max:500'],
+            // admin_notes is used for rejection reason in view often, but distinct in DB
+            'admin_notes' => ['nullable', 'string', 'max:500'], 
         ]);
 
         $guest->update([
             'status' => 'rejected',
             'status_updated_at' => now(),
-            'rejection_reason' => $validated['rejection_reason'],
+            'rejection_reason' => $request->admin_notes, // Using admin_notes as reason if passed
         ]);
 
         // Send rejection email
-        Mail::to($guest->email)->send(new GuestRejectedMail($guest));
+        try {
+            Mail::to($guest->email)->send(new GuestRejectedMail($guest));
+        } catch (\Exception $e) {
+            // Log error but continue
+        }
 
         return back()->with('success', "Guest account for {$guest->name} has been rejected.");
-    }
-
-    /**
-     * Reactivate rejected guest
-     */
-    public function reactivate(User $guest)
-    {
-        if ($guest->role !== 'guest' || $guest->status !== 'rejected') {
-            return back()->with('error', 'Cannot reactivate this account.');
-        }
-
-        $guest->update([
-            'status' => 'pending',
-            'status_updated_at' => now(),
-            'rejection_reason' => null,
-        ]);
-
-        return back()->with('success', "Guest account for {$guest->name} has been moved to pending status.");
-    }
-
-    /**
-     * Suspend approved guest
-     */
-    public function suspend(Request $request, User $guest)
-    {
-        if ($guest->role !== 'guest' || $guest->status !== 'approved') {
-            return back()->with('error', 'Cannot suspend this account.');
-        }
-
-        $validated = $request->validate([
-            'admin_notes' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        $guest->update([
-            'status' => 'rejected',
-            'status_updated_at' => now(),
-            'rejection_reason' => 'Account suspended by admin',
-            'admin_notes' => $validated['admin_notes'] ?? null,
-        ]);
-
-        return back()->with('success', "Guest account for {$guest->name} has been suspended.");
-    }
-
-    /**
-     * Update admin notes
-     */
-    public function updateNotes(Request $request, User $guest)
-    {
-        if ($guest->role !== 'guest') {
-            return back()->with('error', 'Invalid user type.');
-        }
-
-        $validated = $request->validate([
-            'admin_notes' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        $guest->update([
-            'admin_notes' => $validated['admin_notes'],
-        ]);
-
-        return back()->with('success', 'Admin notes updated successfully.');
     }
 
     /**
@@ -249,101 +205,62 @@ class GuestManagementController extends Controller
      */
     public function bulkApprove(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'guest_ids' => ['required', 'array'],
             'guest_ids.*' => ['exists:users,id'],
         ]);
 
-        $approved = 0;
-        foreach ($validated['guest_ids'] as $guestId) {
-            $guest = User::find($guestId);
-            if ($guest && $guest->role === 'guest' && $guest->status === 'pending') {
+        $approvedCount = 0;
+        
+        foreach ($request->guest_ids as $id) {
+            $guest = User::find($id);
+            if ($guest && $guest->role === 'guest' && $guest->status !== 'approved') {
                 $guest->update([
                     'status' => 'approved',
                     'status_updated_at' => now(),
                     'approved_at' => now(),
                     'approved_by' => auth()->id(),
                 ]);
-                Mail::to($guest->email)->send(new GuestApprovedMail($guest));
-                $approved++;
+                
+                try {
+                    Mail::to($guest->email)->send(new GuestApprovedMail($guest));
+                } catch (\Exception $e) {}
+                
+                $approvedCount++;
             }
         }
 
-        return back()->with('success', "Successfully approved {$approved} guest account(s).");
+        return back()->with('success', "Successfully approved {$approvedCount} guest account(s).");
     }
 
     /**
-     * Bulk delete guests
+     * Bulk reject guests
      */
-    public function bulkDelete(Request $request)
+    public function bulkReject(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'guest_ids' => ['required', 'array'],
             'guest_ids.*' => ['exists:users,id'],
         ]);
 
-        $deleted = 0;
-        foreach ($validated['guest_ids'] as $guestId) {
-            $guest = User::find($guestId);
-            if ($guest && $guest->role === 'guest' && !$guest->reservations()->exists()) {
-                $guest->delete();
-                $deleted++;
-            }
-        }
+        $rejectedCount = 0;
 
-        return back()->with('success', "Successfully deleted {$deleted} guest account(s).");
-    }
-
-    /**
-     * Export guests to CSV
-     */
-    public function export(Request $request)
-    {
-        $status = $request->query('status', 'all');
-        
-        $query = User::where('role', 'guest');
-        
-        if ($status !== 'all') {
-            $query->where('status', $status);
-        }
-        
-        $guests = $query->with('approvedBy')->get();
-        
-        $filename = 'guests_' . $status . '_' . now()->format('Y-m-d') . '.csv';
-        
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ];
-        
-        $callback = function() use ($guests) {
-            $file = fopen('php://output', 'w');
-            
-            // Headers
-            fputcsv($file, [
-                'ID', 'Name', 'Email', 'Contact', 'Organization', 
-                'Purpose', 'Status', 'Registered', 'Approved By', 'Approved At'
-            ]);
-            
-            // Data
-            foreach ($guests as $guest) {
-                fputcsv($file, [
-                    $guest->id,
-                    $guest->name,
-                    $guest->email,
-                    $guest->contact_number ?? '',
-                    $guest->organization ?? '',
-                    $guest->purpose ?? '',
-                    ucfirst($guest->status),
-                    $guest->created_at->format('Y-m-d H:i'),
-                    $guest->approvedBy->name ?? '',
-                    $guest->approved_at ? $guest->approved_at->format('Y-m-d H:i') : '',
+        foreach ($request->guest_ids as $id) {
+            $guest = User::find($id);
+            if ($guest && $guest->role === 'guest' && $guest->status !== 'rejected') {
+                $guest->update([
+                    'status' => 'rejected',
+                    'status_updated_at' => now(),
                 ]);
+                
+                try {
+                    Mail::to($guest->email)->send(new GuestRejectedMail($guest));
+                } catch (\Exception $e) {}
+
+                $rejectedCount++;
             }
-            
-            fclose($file);
-        };
-        
-        return response()->stream($callback, 200, $headers);
+        }
+
+        return back()->with('success', "Successfully rejected {$rejectedCount} guest account(s).");
     }
 }

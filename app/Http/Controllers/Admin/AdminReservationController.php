@@ -111,13 +111,19 @@ class AdminReservationController extends Controller
     /**
      * UPDATE METHOD
      */
+    /**
+     * UPDATE METHOD
+     */
     public function update(Request $request, Reservation $reservation)
     {
-        $request->validate([
+        // 1. Validate separate date and time fields
+        $validated = $request->validate([
             'event_name' => 'required|string|max:255',
             'facility_id' => 'required|exists:facilities,id',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
+            'start_date' => 'required|date',
+            'start_time' => 'required|date_format:H:i',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_time' => 'required|date_format:H:i',
             'participants' => 'nullable|integer|min:1',
             'notes' => 'nullable|string',
             'purpose' => 'nullable|string',
@@ -125,15 +131,57 @@ class AdminReservationController extends Controller
             'equipment_needed' => 'nullable|string',
         ]);
 
-        $reservation->update($request->all());
+        try {
+            // 2. Combine Date and Time
+            $start = Carbon::parse($validated['start_date'] . ' ' . $validated['start_time']);
+            $end = Carbon::parse($validated['end_date'] . ' ' . $validated['end_time']);
 
-        return redirect()->route('admin.reservations.show', $reservation)
-            ->with('success', 'Reservation updated successfully.');
+            // 3. Validate logical timing
+            if ($end->lte($start)) {
+                return back()->withErrors(['end_time' => 'End time must be after start time.'])->withInput();
+            }
+
+            // 4. Check for conflicts (excluding current reservation)
+            $conflict = Reservation::where('facility_id', $validated['facility_id'])
+                ->where('id', '!=', $reservation->id)
+                ->whereNotIn('status', ['rejected', 'cancelled'])
+                ->where(function($q) use ($start, $end) {
+                    $q->whereBetween('start_time', [$start, $end])
+                      ->orWhereBetween('end_time', [$start, $end])
+                      ->orWhere(function($q2) use ($start, $end) {
+                          $q2->where('start_time', '<', $start)
+                             ->where('end_time', '>', $end);
+                      });
+                })->exists();
+
+            if ($conflict) {
+                return back()->withErrors(['start_time' => 'Time conflict: This facility is already booked for the selected time.'])->withInput();
+            }
+
+            // 5. Recalculate Cost (Optional: Remove if Admin shouldn't auto-update cost)
+            $facility = Facility::find($validated['facility_id']);
+            $duration = $start->diffInHours($end, true);
+            $hours = ceil($duration);
+            $newCost = $hours * ($facility->hourly_rate ?? 0);
+
+            // 6. Update Reservation
+            $reservation->update([
+                'event_name' => $validated['event_name'],
+                'facility_id' => $validated['facility_id'],
+                'start_time' => $start,
+                'end_time' => $end,
+                'participants' => $validated['participants'],
+                'notes' => $validated['notes'],
+                'cost' => $newCost, // Updates cost based on new duration
+            ]);
+
+            return redirect()->route('admin.reservations.show', $reservation)
+                ->with('success', 'Reservation updated successfully.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error updating reservation: ' . $e->getMessage())->withInput();
+        }
     }
-
-    /**
-     * Approve a reservation - DEBUG VERSION
-     */
     public function approve(Request $request, $id)
     {
         Log::info('=== DEBUG: APPROVAL PROCESS STARTED ===', [
@@ -522,4 +570,52 @@ class AdminReservationController extends Controller
             return back()->with('error', 'Failed to reject reservations: ' . $e->getMessage());
         }
     }
-}
+        public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'facility_id' => 'required|exists:facilities,id',
+            'start_time' => 'required|date',
+            'end_time' => 'required|date|after:start_time',
+            'reservation_id' => 'nullable|exists:reservations,id',
+        ]);
+
+        $facility = Facility::find($request->facility_id);
+        $start = Carbon::parse($request->start_time);
+        $end = Carbon::parse($request->end_time);
+
+        // Validate operating hours
+        if ($facility->opening_time && $facility->closing_time) {
+            $facilityOpen = Carbon::parse($request->start_time)->setTimeFromTimeString($facility->opening_time);
+            $facilityClose = Carbon::parse($request->start_time)->setTimeFromTimeString($facility->closing_time);
+            
+            if ($start->lt($facilityOpen) || $end->gt($facilityClose)) {
+                return response()->json([
+                    'available' => false,
+                    'message' => 'Time slot is outside facility operating hours (' . $facility->opening_time . ' - ' . $facility->closing_time . ')',
+                    'facility' => ['name' => $facility->name]
+                ]);
+            }
+        } 
+
+        // Check for conflicts (excluding the current reservation)
+        $conflict = Reservation::where('facility_id', $request->facility_id)
+            ->whereNotIn('status', ['rejected', 'cancelled'])
+            ->when($request->reservation_id, fn($q) => $q->where('id', '!=', $request->reservation_id))
+            ->where(function($q) use ($start, $end) {
+                $q->whereBetween('start_time', [$start, $end])
+                  ->orWhereBetween('end_time', [$start, $end])
+                  ->orWhere(function($q2) use ($start, $end) {
+                      $q2->where('start_time', '<', $start)->where('end_time', '>', $end);
+                  });
+            })->exists();
+
+        return response()->json([
+            'available' => !$conflict,
+            'message' => $conflict ? 'This time slot is already booked' : 'Time slot is available!',
+            'facility' => ['name' => $facility->name]
+        ]);
+    }
+
+
+    }
+
