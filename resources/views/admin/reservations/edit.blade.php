@@ -58,7 +58,6 @@
                             <input type="text" 
                                    name="event_name" 
                                    id="event_name"
-                                   value="{{ old('event_name', $reservation->event_name) }}"
                                    x-model="formData.event_name"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                    required>
@@ -72,7 +71,6 @@
                             <input type="number" 
                                    name="participants" 
                                    id="participants"
-                                   value="{{ old('participants', $reservation->participants) }}"
                                    x-model="formData.participants"
                                    min="1"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -101,7 +99,7 @@
                         <div class="mb-4">
                             <input type="text" 
                                    x-model="facilitySearch"
-                                   placeholder="Search facilities..."
+                                   placeholder="Search facilities by name, type, or location..."
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
 
@@ -110,14 +108,23 @@
                             <template x-for="facility in filteredFacilities" :key="facility.id">
                                 <div @click="selectFacility(facility)"
                                      :class="selectedFacilityId === facility.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'"
-                                     class="border-2 rounded-lg p-3 cursor-pointer hover:border-blue-300 transition">
+                                     class="border-2 rounded-lg p-4 cursor-pointer hover:border-blue-300 transition">
                                     <div class="flex items-start space-x-3">
                                         <img :src="facility.image_url" 
                                              :alt="facility.name"
                                              class="w-16 h-16 rounded object-cover">
                                         <div class="flex-1 min-w-0">
                                             <h3 class="font-semibold text-gray-900 truncate" x-text="facility.name"></h3>
-                                            <p class="text-xs text-gray-500" x-text="facility.type_label"></p>
+                                            <p class="text-sm text-gray-500 font-medium" x-text="facility.type_label"></p>
+                                            
+                                            <!-- Pricing -->
+                                            <div class="mt-1 text-sm font-semibold text-green-600" x-show="facility.hourly_rate > 0">
+                                                ₱<span x-text="facility.hourly_rate"></span>/hour
+                                            </div>
+                                            <div class="mt-1 text-sm text-gray-600" x-show="facility.hourly_rate === 0">
+                                                Free
+                                            </div>
+                                            
                                             <div class="mt-1 text-xs text-gray-600">
                                                 <div class="flex items-center">
                                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,6 +191,44 @@
                                       x-text="availabilityMessage"></span>
                             </div>
                         </div>
+
+                        <!-- Recurring Reservation -->
+                        <div class="mt-6">
+                            <label class="flex items-center">
+                                <input type="checkbox" 
+                                       name="is_recurring" 
+                                       value="1"
+                                       x-model="formData.is_recurring"
+                                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-700">Make this a recurring reservation</span>
+                            </label>
+                        </div>
+
+                        <!-- Recurring Options -->
+                        <div x-show="formData.is_recurring" x-transition class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="recurrence_type" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Recurrence Type
+                                </label>
+                                <select name="recurrence_type" 
+                                        x-model="formData.recurrence_type"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select type</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="recurrence_end_date" class="block text-sm font-medium text-gray-700 mb-2">
+                                    End Date
+                                </label>
+                                <input type="date" 
+                                       name="recurrence_end_date"
+                                       x-model="formData.recurrence_end_date"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Submit Button -->
@@ -237,6 +282,31 @@
                                     </svg>
                                     <span x-text="selectedFacility?.hours_text"></span>
                                 </div>
+
+                                <!-- Capacity -->
+                                <div class="flex items-start" x-show="selectedFacility?.capacity">
+                                    <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    <span>
+                                        <span x-text="selectedFacility?.capacity"></span>
+                                        <span x-show="selectedFacility?.max_capacity"> - <span x-text="selectedFacility?.max_capacity"></span></span>
+                                        people
+                                    </span>
+                                </div>
+
+                                <!-- Pricing -->
+                                <div class="flex items-start" x-show="selectedFacility?.hourly_rate !== null">
+                                    <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                                    </svg>
+                                    <span x-show="selectedFacility?.hourly_rate > 0">
+                                        ₱<span x-text="selectedFacility?.hourly_rate"></span>/hour
+                                    </span>
+                                    <span x-show="selectedFacility?.hourly_rate === 0" class="text-green-600 font-semibold">
+                                        Free
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -247,6 +317,7 @@
                         <div class="text-xs text-blue-800 space-y-1">
                             <p><strong>Status:</strong> {{ ucfirst($reservation->status) }}</p>
                             <p><strong>Created:</strong> {{ $reservation->created_at->format('M d, Y') }}</p>
+                            <p><strong>Cost:</strong> ₱{{ number_format($reservation->cost ?? 0, 2) }}</p>
                         </div>
                     </div>
                 </div>
@@ -266,9 +337,12 @@ function reservationEditForm() {
         formData: {
             event_name: '{{ old('event_name', $reservation->event_name) }}',
             participants: '{{ old('participants', $reservation->participants) }}',
-            notes: '{{ old('notes', $reservation->notes) }}',
+            notes: `{!! old('notes', $reservation->notes) !!}`,
             start_time: '{{ old('start_time', \Carbon\Carbon::parse($reservation->start_time)->format('Y-m-d\TH:i')) }}',
-            end_time: '{{ old('end_time', \Carbon\Carbon::parse($reservation->end_time)->format('Y-m-d\TH:i')) }}'
+            end_time: '{{ old('end_time', \Carbon\Carbon::parse($reservation->end_time)->format('Y-m-d\TH:i')) }}',
+            is_recurring: {{ old('is_recurring', $reservation->is_recurring ?? false) ? 'true' : 'false' }},
+            recurrence_type: '{{ old('recurrence_type', $reservation->recurrence_type) }}',
+            recurrence_end_date: '{{ old('recurrence_end_date', $reservation->recurrence_end_date?->format('Y-m-d')) }}'
         },
         availabilityChecked: false,
         isAvailable: false,

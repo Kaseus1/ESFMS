@@ -11,7 +11,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
-                'resources/js/admin/dashboard.js' // ✅ Added admin dashboard JS
+              
             ],
             refresh: true,
         }),

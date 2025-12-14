@@ -45,6 +45,10 @@ class Reservation extends Model
         
         // Admin notes
         'admin_notes',
+        
+        // Approval tracking
+        'approved_at',
+        'approved_by',
     ];
 
     protected $casts = [
@@ -56,6 +60,7 @@ class Reservation extends Model
         'requires_setup'       => 'boolean',
         'requires_equipment'   => 'boolean',
         'cancelled_at'         => 'datetime',
+        'approved_at'          => 'datetime',
         'cost'                 => 'decimal:2',
         'payment_status'       => 'boolean',
     ];

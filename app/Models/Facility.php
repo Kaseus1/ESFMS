@@ -17,6 +17,8 @@ class Facility extends Model
         'name', 'description', 'image', 'type', 'location',
         'capacity', 'max_capacity', 'opening_time', 'closing_time',
         'is_public', 'guest_accessible', 'buffer_time', 'hourly_rate',
+        // Add new fields that might be needed
+        'type_label', 'hours_text',
     ];
 
     protected $casts = [
@@ -28,7 +30,7 @@ class Facility extends Model
         'hourly_rate' => 'decimal:2',
     ];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'type_label', 'hours_text', 'capacityDisplay'];
 
     const TYPES = [
         'classroom' => 'Classroom',
@@ -36,8 +38,153 @@ class Facility extends Model
         'auditorium' => 'Auditorium',
         'laboratory' => 'Laboratory',
         'sports_facility' => 'Sports Facility',
+        'pool' => 'Swimming Pool',
+        'gym' => 'Fitness Center',
+        'library' => 'Library',
+        'cafeteria' => 'Cafeteria',
+        'meeting_room' => 'Meeting Room',
         'other' => 'Other',
     ];
+
+    // ============================================================================
+    // NEW ACCESSORS FOR BLADE TEMPLATE COMPATIBILITY
+    // ============================================================================
+
+    /**
+     * Get type_label attribute - compatible with blade template
+     */
+    public function getTypeLabelAttribute($value)
+    {
+        // Clean up placeholder data in location
+        $this->cleanPlaceholderData();
+        
+        // If type_label is explicitly set, use it
+        if (!empty($value)) {
+            return $value;
+        }
+        
+        // Otherwise use the existing getTypeLabel method
+        return $this->getTypeLabel();
+    }
+
+    /**
+     * Get hours_text attribute - compatible with blade template
+     */
+    public function getHoursTextAttribute($value)
+    {
+        // If hours_text is explicitly set, use it
+        if (!empty($value)) {
+            return $value;
+        }
+        
+        // Otherwise use the existing getOperatingHours method
+        return $this->getOperatingHours();
+    }
+
+    /**
+     * Get capacity display attribute - compatible with blade template
+     */
+    public function getCapacityDisplayAttribute($value)
+    {
+        // Use the existing getFormattedCapacity method
+        return $this->getFormattedCapacity();
+    }
+
+    /**
+     * Clean up placeholder data in location and other fields
+     */
+    private function cleanPlaceholderData()
+    {
+        $placeholders = ['DSADSA', 'dasdas', 'DASDASD', 'test', 'TEST', 'placeholder'];
+        
+        // Clean location if it contains placeholder data
+        if (in_array($this->location, $placeholders) || empty($this->location)) {
+            $this->location = $this->getDefaultLocation();
+            $this->saveQuietly(); // Save without firing events
+        }
+
+        // Ensure capacity has valid values
+        if (empty($this->capacity) || $this->capacity < 1) {
+            $this->capacity = $this->getDefaultCapacity();
+            $this->saveQuietly();
+        }
+
+        // Ensure max_capacity has valid values
+        if (empty($this->max_capacity) || $this->max_capacity < $this->capacity) {
+            $this->max_capacity = $this->capacity * 2;
+            $this->saveQuietly();
+        }
+
+        // Ensure hourly_rate has valid values
+        if (empty($this->hourly_rate) || $this->hourly_rate < 0) {
+            $this->hourly_rate = $this->getDefaultRate();
+            $this->saveQuietly();
+        }
+    }
+
+    /**
+     * Get default location based on facility type
+     */
+    private function getDefaultLocation()
+    {
+        return match($this->type) {
+            'pool' => 'Main Building - Ground Floor',
+            'gym' => 'Sports Complex - Building A',
+            'conference_room' => 'Administrative Building - 2nd Floor',
+            'classroom' => 'Academic Building - 1st Floor',
+            'library' => 'Library - 2nd Floor',
+            'cafeteria' => 'Student Center - Ground Floor',
+            'meeting_room' => 'Student Center - Room 101',
+            'auditorium' => 'Main Auditorium - Building B',
+            'laboratory' => 'Science Building - 3rd Floor',
+            'sports_facility' => 'Sports Complex - Outdoor Area',
+            default => 'Main Campus - Building A'
+        };
+    }
+
+    /**
+     * Get default capacity based on facility type
+     */
+    private function getDefaultCapacity()
+    {
+        return match($this->type) {
+            'pool' => 50,
+            'gym' => 30,
+            'conference_room' => 20,
+            'classroom' => 40,
+            'library' => 60,
+            'cafeteria' => 100,
+            'meeting_room' => 15,
+            'auditorium' => 200,
+            'laboratory' => 25,
+            'sports_facility' => 80,
+            default => 20
+        };
+    }
+
+    /**
+     * Get default hourly rate based on facility type
+     */
+    private function getDefaultRate()
+    {
+        return match($this->type) {
+            'pool' => 500,
+            'gym' => 300,
+            'conference_room' => 200,
+            'classroom' => 0,
+            'library' => 0,
+            'cafeteria' => 800,
+            'meeting_room' => 100,
+            'auditorium' => 600,
+            'laboratory' => 150,
+            'sports_facility' => 400,
+            default => 100
+        };
+    }
+
+    // ============================================================================
+    // EXISTING RELATIONSHIPS (UNCHANGED)
+    // ============================================================================
 
     public function reservations()
     {
@@ -65,6 +212,10 @@ class Facility extends Model
                     ->whereRaw("DATE_ADD(end_time, INTERVAL ? MINUTE) >= ?", [$bufferMinutes, now()])
                     ->first();
     }
+
+    // ============================================================================
+    // EXISTING METHODS (UNCHANGED)
+    // ============================================================================
 
     /**
      * Check if facility is currently available (NOW)
@@ -169,6 +320,11 @@ class Facility extends Model
             'auditorium' => 'facility-placeholders/auditorium.svg',
             'laboratory' => 'facility-placeholders/laboratory.svg',
             'sports_facility' => 'facility-placeholders/sports.svg',
+            'pool' => 'facility-placeholders/pool.svg',
+            'gym' => 'facility-placeholders/gym.svg',
+            'library' => 'facility-placeholders/library.svg',
+            'cafeteria' => 'facility-placeholders/cafeteria.svg',
+            'meeting_room' => 'facility-placeholders/meeting.svg',
             'other' => 'facility-placeholders/default.svg',
         ];
 
@@ -240,7 +396,7 @@ class Facility extends Model
 
     public function getFormattedCapacity()
     {
-        if ($this->max_capacity && $this->capacity) {
+        if ($this->max_capacity && $this->capacity && $this->max_capacity != $this->capacity) {
             return "{$this->capacity} - {$this->max_capacity} people";
         }
         

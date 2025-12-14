@@ -8,6 +8,7 @@ use App\Models\Facility;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class AdminReservationController extends Controller
@@ -84,50 +85,207 @@ class AdminReservationController extends Controller
     {
         $reservation->load(['user', 'facility']);
 
-        // Load wallet transactions for this reservation
-        $transactions = $reservation->user->walletTransactions()
-            ->where('reservation_id', $reservation->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Load wallet transactions for this reservation if user has that method
+        $transactions = null;
+        if (method_exists($reservation->user, 'walletTransactions')) {
+            $transactions = $reservation->user->walletTransactions()
+                ->where('reservation_id', $reservation->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
 
         return view('admin.reservations.show', compact('reservation', 'transactions'));
     }
 
     /**
-     * Approve a reservation
+     * EDIT METHOD
      */
-    public function approve(Request $request, Reservation $reservation)
+    public function edit(Reservation $reservation)
     {
-        if ($reservation->status !== 'pending') {
-            return back()->with('error', 'Only pending reservations can be approved.');
-        }
-
-        $reservation->update([
-            'status' => 'approved',
-            'admin_notes' => $request->admin_notes,
-        ]);
-
-        return back()->with('success', 'Reservation approved successfully.');
+        $reservation->load(['user', 'facility']);
+        $facilities = Facility::orderBy('name')->get();
+        
+        return view('admin.reservations.edit', compact('reservation', 'facilities'));
     }
 
     /**
-     * Reject a reservation and refund the user
+     * UPDATE METHOD
      */
-    public function reject(Request $request, Reservation $reservation)
+    public function update(Request $request, Reservation $reservation)
     {
-        if ($reservation->status !== 'pending') {
-            return back()->with('error', 'Only pending reservations can be rejected.');
-        }
-
         $request->validate([
-            'admin_notes' => 'nullable|string|max:500',
+            'event_name' => 'required|string|max:255',
+            'facility_id' => 'required|exists:facilities,id',
+            'start_time' => 'required|date',
+            'end_time' => 'required|date|after:start_time',
+            'participants' => 'nullable|integer|min:1',
+            'notes' => 'nullable|string',
+            'purpose' => 'nullable|string',
+            'setup_requirements' => 'nullable|string',
+            'equipment_needed' => 'nullable|string',
         ]);
 
-        DB::beginTransaction();
+        $reservation->update($request->all());
+
+        return redirect()->route('admin.reservations.show', $reservation)
+            ->with('success', 'Reservation updated successfully.');
+    }
+
+    /**
+     * Approve a reservation - DEBUG VERSION
+     */
+    public function approve(Request $request, $id)
+    {
+        Log::info('=== DEBUG: APPROVAL PROCESS STARTED ===', [
+            'reservation_id' => $id,
+            'request_data' => $request->all(),
+            'user_id' => auth()->id()
+        ]);
 
         try {
+            // Step 1: Find the reservation
+            Log::info('Step 1: Finding reservation...');
+            $reservation = Reservation::find($id);
+
+            if (!$reservation) {
+                Log::error('Step 1 FAILED: Reservation not found', ['reservation_id' => $id]);
+                return back()->with('error', 'Reservation not found.');
+            }
+
+            Log::info('Step 1 SUCCESS: Reservation found', [
+                'reservation_id' => $reservation->id,
+                'current_status' => $reservation->status,
+                'status_type' => gettype($reservation->status),
+                'is_pending' => $reservation->status === 'pending'
+            ]);
+
+            // Step 2: Refresh from database
+            Log::info('Step 2: Refreshing from database...');
+            $reservation->refresh();
+            Log::info('Step 2 SUCCESS: Refreshed from database', ['current_status' => $reservation->status]);
+
+            // Step 3: Check status
+            Log::info('Step 3: Checking reservation status...');
+            $status = $reservation->status ? strtolower(trim($reservation->status)) : null;
+            Log::info('Step 3: Status check details', [
+                'original_status' => $reservation->status,
+                'processed_status' => $status,
+                'is_pending' => $status === 'pending'
+            ]);
+
+            if ($status !== 'pending') {
+                Log::warning('Step 3 FAILED: Status is not pending', [
+                    'current_status' => $reservation->status,
+                    'expected' => 'pending',
+                    'actual' => $status
+                ]);
+                return back()->with('error', 
+                    "Only pending reservations can be approved. Current status: '{$reservation->status}'");
+            }
+
+            Log::info('Step 3 SUCCESS: Status is pending');
+
+            // Step 4: Prepare update data
+            Log::info('Step 4: Preparing update data...');
+            $adminNotes = $request->admin_notes ? trim($request->admin_notes) : null;
+            $updateData = [
+                'status' => 'approved',
+                'admin_notes' => $adminNotes,
+                'approved_at' => now(),
+                'approved_by' => auth()->id(),
+            ];
+
+            Log::info('Step 4 SUCCESS: Update data prepared', [
+                'update_data' => $updateData,
+                'current_user_id' => auth()->id()
+            ]);
+
+            // Step 5: Perform the update
+            Log::info('Step 5: Starting database update...');
+            
+            $result = $reservation->update($updateData);
+            
+            Log::info('Step 5: Update result', [
+                'update_result' => $result,
+                'rows_affected' => $reservation->wasChanged(),
+                'new_status' => $reservation->status,
+                'approved_at' => $reservation->approved_at,
+                'approved_by' => $reservation->approved_by
+            ]);
+
+            // Step 6: Verify the update worked
+            Log::info('Step 6: Verifying update...');
+            $reservation->refresh();
+            
+            if ($reservation->status !== 'approved') {
+                Log::error('Step 6 FAILED: Update verification failed', [
+                    'expected_status' => 'approved',
+                    'actual_status' => $reservation->status
+                ]);
+                return back()->with('error', 'Failed to verify reservation update. Please try again.');
+            }
+
+            Log::info('Step 6 SUCCESS: Update verified');
+
+            Log::info('=== APPROVAL COMPLETED SUCCESSFULLY ===', [
+                'reservation_id' => $reservation->id,
+                'final_status' => $reservation->status,
+                'admin_notes' => $adminNotes
+            ]);
+
+            return back()->with('success', 'Reservation approved successfully.');
+
+        } catch (\Exception $e) {
+            Log::error('=== APPROVAL FAILED WITH EXCEPTION ===', [
+                'reservation_id' => $id,
+                'user_id' => auth()->id(),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'error_trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
+            return back()->with('error', 'Failed to approve reservation: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject a reservation - DEBUG VERSION
+     */
+    public function reject(Request $request, $id)
+    {
+        Log::info('=== DEBUG: REJECT PROCESS STARTED ===', [
+            'reservation_id' => $id,
+            'request_data' => $request->all()
+        ]);
+
+        try {
+            $request->validate([
+                'admin_notes' => 'nullable|string|max:500',
+            ]);
+
+            // Find the reservation
+            $reservation = Reservation::find($id);
+            
+            if (!$reservation) {
+                return back()->with('error', 'Reservation not found.');
+            }
+
+            // Force refresh from database to ensure we have the latest status
+            $reservation->refresh();
+            
+            // More flexible status checking
+            $status = strtolower(trim($reservation->status));
+            
+            if ($status !== 'pending') {
+                return back()->with('error', "Only pending reservations can be rejected. Current status: '{$reservation->status}'");
+            }
+
+            DB::beginTransaction();
+
             // Refund the user if they paid
-            if ($reservation->payment_status && $reservation->cost > 0) {
+            if ($reservation->payment_status && $reservation->cost > 0 && method_exists($reservation->user, 'refundCredits')) {
                 $reservation->user->refundCredits(
                     amount: $reservation->cost,
                     reservationId: $reservation->id,
@@ -149,10 +307,20 @@ class AdminReservationController extends Controller
                 $message .= ' ₱' . number_format($reservation->cost, 2) . ' has been refunded to ' . $reservation->user->name . "'s wallet.";
             }
 
+            Log::info('=== REJECT COMPLETED SUCCESSFULLY ===', [
+                'reservation_id' => $reservation->id,
+                'message' => $message
+            ]);
+
             return back()->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('=== REJECT FAILED WITH EXCEPTION ===', [
+                'reservation_id' => $id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return back()->with('error', 'Failed to reject reservation: ' . $e->getMessage());
         }
     }
@@ -160,8 +328,14 @@ class AdminReservationController extends Controller
     /**
      * Cancel a reservation and refund the user
      */
-    public function cancel(Request $request, Reservation $reservation)
+    public function cancel(Request $request, $id)
     {
+        $reservation = Reservation::find($id);
+        
+        if (!$reservation) {
+            return back()->with('error', 'Reservation not found.');
+        }
+
         if ($reservation->status === 'cancelled') {
             return back()->with('error', 'This reservation is already cancelled.');
         }
@@ -180,7 +354,7 @@ class AdminReservationController extends Controller
             $refundAmount = 0;
 
             // Refund the user if they paid
-            if ($reservation->payment_status && $reservation->cost > 0) {
+            if ($reservation->payment_status && $reservation->cost > 0 && method_exists($reservation->user, 'refundCredits')) {
                 $refundAmount = $reservation->cost;
 
                 $reservation->user->refundCredits(
@@ -209,6 +383,10 @@ class AdminReservationController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to cancel reservation', [
+                'reservation_id' => $reservation->id,
+                'error' => $e->getMessage()
+            ]);
             return back()->with('error', 'Failed to cancel reservation: ' . $e->getMessage());
         }
     }
@@ -216,14 +394,20 @@ class AdminReservationController extends Controller
     /**
      * Delete a reservation permanently
      */
-    public function destroy(Reservation $reservation)
+    public function destroy($id)
     {
+        $reservation = Reservation::find($id);
+        
+        if (!$reservation) {
+            return back()->with('error', 'Reservation not found.');
+        }
+
         if ($reservation->status !== 'cancelled') {
             return back()->with('error', 'Only cancelled reservations can be deleted.');
         }
 
-        // Check if the 7-day grace period has passed
-        if (!$reservation->canBeDeleted()) {
+        // Check if the 7-day grace period has passed (if method exists)
+        if (method_exists($reservation, 'canBeDeleted') && !$reservation->canBeDeleted()) {
             return back()->with('error', 'Reservations can only be permanently deleted 7 days after cancellation.');
         }
 
@@ -302,8 +486,8 @@ class AdminReservationController extends Controller
             $totalRefunded = 0;
 
             foreach ($reservations as $reservation) {
-                // Refund if paid
-                if ($reservation->payment_status && $reservation->cost > 0) {
+                // Refund if paid and method exists
+                if ($reservation->payment_status && $reservation->cost > 0 && method_exists($reservation->user, 'refundCredits')) {
                     $reservation->user->refundCredits(
                         amount: $reservation->cost,
                         reservationId: $reservation->id,
@@ -332,6 +516,9 @@ class AdminReservationController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to bulk reject reservations', [
+                'error' => $e->getMessage()
+            ]);
             return back()->with('error', 'Failed to reject reservations: ' . $e->getMessage());
         }
     }

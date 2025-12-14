@@ -141,7 +141,7 @@
             position: absolute;
             top: calc(100% + 10px);
             right: 0;
-            width: 400px;
+            width: 350px;
             max-width: 90vw;
             background: #fff;
             border-radius: 12px;
