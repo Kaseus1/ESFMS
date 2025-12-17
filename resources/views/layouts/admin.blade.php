@@ -54,7 +54,6 @@
             flex-direction: column;
         }
         
-        /* Desktop Collapsed State */
         .sidebar.collapsed:not(.mobile-open) { width: var(--sidebar-collapsed); }
 
         /* Brand */
@@ -294,7 +293,7 @@
             padding: 0 4px;
         }
 
-        /* Notification Dropdown (Main Fix) */
+        /* Notification Dropdown */
         .notification-dropdown {
             position: absolute;
             top: calc(100% + 15px);
@@ -308,48 +307,37 @@
             visibility: hidden;
             transform: translateY(-10px);
             transition: all .3s;
-            z-index: 1001; /* Ensure above content */
+            z-index: 1001;
             max-height: 550px;
             display: flex;
             flex-direction: column;
             border: 1px solid #e2e8f0;
         }
         .notification-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
-        
         .notification-header { padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
         .notification-header h3 { font-size: 1rem; font-weight: 700; color: #172030; }
         .mark-all-read { font-size: .75rem; color: var(--primary); cursor: pointer; padding: .25rem .5rem; border-radius: 4px; background: none; border: none; }
         .mark-all-read:hover { background: #f1f5f9; }
-        
         .notification-list { overflow-y: auto; max-height: 400px; padding: .5rem 0; }
         .notification-list::-webkit-scrollbar { width: 6px; }
         .notification-list::-webkit-scrollbar-track { background: #f1f5f9; }
         .notification-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        
         .notification-item { padding: 1rem 1.25rem; border-left: 3px solid transparent; transition: all .2s; cursor: pointer; text-decoration: none; display: block; color: inherit; }
         .notification-item:hover { background: #F8F9FA; }
         .notification-item.unread { background: #f0fdf4; border-left-color: var(--primary); }
-        
-        /* Specific Types */
-        .notification-item.type-reservation.unread,
-        .notification-item.type-yellow.unread { background: #fefce8; border-left-color: #eab308; }
-        .notification-item.type-guest.unread,
-        .notification-item.type-blue.unread { background: #eff6ff; border-left-color: #3b82f6; }
-        .notification-item.type-success.unread,
-        .notification-item.type-green.unread { background: #f0fdf4; border-left-color: #10b981; }
-
+        .notification-item.type-reservation.unread { background: #fefce8; border-left-color: #eab308; }
+        .notification-item.type-guest.unread { background: #eff6ff; border-left-color: #3b82f6; }
+        .notification-item.type-success.unread { background: #f0fdf4; border-left-color: #10b981; }
         .notification-content { display: flex; gap: .75rem; }
         .notification-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.1rem; }
         .notification-icon.yellow { background: #fef3c7; color: #d97706; }
         .notification-icon.blue { background: #dbeafe; color: #2563eb; }
         .notification-icon.green { background: #d1fae5; color: #059669; }
-
         .notification-text { flex: 1; min-width: 0; }
         .notification-title { font-weight: 600; font-size: .875rem; color: #172030; margin-bottom: .25rem; }
         .notification-message { font-size: .8rem; color: #333C4D; margin-bottom: .25rem; }
         .notification-details { font-size: .75rem; color: #64748b; font-style: italic; }
         .notification-time { font-size: .7rem; color: #333C4D; opacity: 0.5; margin-top: .25rem; }
-        
         .notification-empty { padding: 3rem 1.25rem; text-align: center; color: #333C4D; opacity: 0.6; }
         .notification-empty i { font-size: 3rem; margin-bottom: 1rem; opacity: .3; }
         .notification-footer { padding: .75rem 1.25rem; border-top: 1px solid #e2e8f0; text-align: center; }
@@ -359,8 +347,6 @@
         .notification-badge.has-unread { animation: badge-pulse 2s infinite; }
 
         .content-wrapper { flex: 1; padding: 1.5rem; }
-
-        /* Alerts */
         .alert { margin-bottom: 1rem; padding: 1rem; border-radius: 10px; display: flex; align-items: center; gap: .75rem; }
         .alert-success { background: #d1fae5; border-left: 4px solid var(--primary); color: #065f46; }
         .alert-error { background: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b; }
@@ -370,62 +356,26 @@
 
         footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 1.5rem; text-align: center; color: #333C4D; font-size: .85rem; }
 
-        /* Mobile Styles */
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); width: 280px !important; }
             .sidebar.mobile-open { transform: translateX(0); }
-            .sidebar-toggle { display: none; }
-            
-            /* Ensure text is VISIBLE on mobile open */
             .sidebar.mobile-open .brand-text,
             .sidebar.mobile-open .nav-item-text,
             .sidebar.mobile-open .user-info,
             .sidebar.mobile-open .nav-section-title {
-                opacity: 1 !important; 
-                display: block !important; 
-                width: auto !important;
+                opacity: 1 !important; display: block !important; width: auto !important;
             }
-
+            .sidebar-toggle { display: none; }
             .main-content { margin-left: 0 !important; }
             .sidebar.collapsed + .main-content { margin-left: 0; }
-            
-            .mobile-menu-btn {
-                display: flex;
-                width: 38px;
-                height: 38px;
-                background: var(--primary);
-                color: #fff;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                align-items: center;
-                justify-content: center;
-                transition: background 0.2s;
-            }
+            .mobile-menu-btn { display: flex; width: 38px; height: 38px; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer; align-items: center; justify-content: center; transition: background 0.2s; }
             .mobile-menu-btn:active { background: var(--primary-dark); }
-            
             .top-bar { padding: 0 1rem; }
             .top-bar-title { font-size: 1.1rem; }
             .content-wrapper { padding: 1rem; }
-            
-            .notification-dropdown {
-                position: fixed;
-                top: var(--header-height);
-                left: 0;
-                right: 0;
-                width: 100%;
-                max-width: 100%;
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            }
+            .notification-dropdown { position: fixed; top: var(--header-height); left: 0; right: 0; width: 100%; max-width: 100%; border-radius: 0; border-left: none; border-right: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         }
-
-        @media (min-width: 769px) {
-            .mobile-menu-btn { display: none; }
-        }
-
+        @media (min-width: 769px) { .mobile-menu-btn { display: none; } }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .7; } }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes badge-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: .8; } }
@@ -437,138 +387,72 @@
 <body x-data="{ sidebarOpen: window.innerWidth > 768, mobileOpen: false }"
       @resize.window="if (window.innerWidth > 768) { mobileOpen = false; sidebarOpen = true; } else { sidebarOpen = false; }">
     
-    <div class="mobile-overlay" 
-         :class="{'show': mobileOpen}"
-         @click="mobileOpen = false"></div>
+    <div class="mobile-overlay" :class="{'show': mobileOpen}" @click="mobileOpen = false"></div>
 
     <aside class="sidebar" :class="{'collapsed': !sidebarOpen, 'mobile-open': mobileOpen}">
         <div class="sidebar-brand">
-            <div class="brand-logo">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <div class="brand-text">
-                <h1>ESFMS</h1>
-                <p>Admin Portal</p>
-            </div>
-            <button class="sidebar-toggle" @click="sidebarOpen = !sidebarOpen">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
+            <div class="brand-logo"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text"><h1>ESFMS</h1><p>Admin Portal</p></div>
+            <button class="sidebar-toggle" @click="sidebarOpen = !sidebarOpen"><i class="fa-solid fa-chevron-left"></i></button>
         </div>
 
         <nav class="sidebar-nav">
             <div class="nav-section">
                 <div class="nav-section-title">Main Menu</div>
-                
                 <a href="{{ route('admin.dashboard') }}" class="nav-item {{request()->routeIs('admin.dashboard')?'active':''}}">
-                    <i class="fa-solid fa-house"></i>
-                    <span class="nav-item-text">Dashboard</span>
+                    <i class="fa-solid fa-house"></i><span class="nav-item-text">Dashboard</span>
                 </a>
-
                 <a href="{{ route('admin.users.index') }}" class="nav-item {{request()->routeIs('admin.users.*')?'active':''}}">
-                    <i class="fa-solid fa-users"></i>
-                    <span class="nav-item-text">Users</span>
+                    <i class="fa-solid fa-users"></i><span class="nav-item-text">Users</span>
                 </a>
-
                 <a href="{{ route('admin.guests.index') }}" class="nav-item {{request()->routeIs('admin.guests.*')?'active':''}}">
-                    <i class="fa-solid fa-user-group"></i>
-                    <span class="nav-item-text">Guest Management</span>
-                    @php
-                        $pendingGuests = \App\Models\User::where('role','guest')->where('status','pending')->count();
-                    @endphp
-                    @if($pendingGuests > 0)
-                        <span class="nav-badge">{{$pendingGuests}}</span>
-                    @endif
+                    <i class="fa-solid fa-user-group"></i><span class="nav-item-text">Guest Management</span>
+                    @php $pendingGuests = \App\Models\User::where('role','guest')->where('status','pending')->count(); @endphp
+                    @if($pendingGuests > 0) <span class="nav-badge">{{$pendingGuests}}</span> @endif
                 </a>
             </div>
 
             <div class="nav-section">
                 <div class="nav-section-title">Facilities</div>
-                
                 <a href="{{ route('admin.facilities.index') }}" class="nav-item {{request()->routeIs('admin.facilities.*')?'active':''}}">
-                    <i class="fa-solid fa-building"></i>
-                    <span class="nav-item-text">All Facilities</span>
+                    <i class="fa-solid fa-building"></i><span class="nav-item-text">All Facilities</span>
                 </a>
-
                 <a href="{{ route('admin.reservations.index') }}" class="nav-item {{request()->routeIs('admin.reservations.*')?'active':''}}">
-                    <i class="fa-solid fa-calendar-check"></i>
-                    <span class="nav-item-text">Reservations</span>
-                    @php
-                        $pendingReservations = \App\Models\Reservation::where('status','pending')->count();
-                    @endphp
-                    @if($pendingReservations > 0)
-                        <span class="nav-badge">{{$pendingReservations}}</span>
-                    @endif
+                    <i class="fa-solid fa-calendar-check"></i><span class="nav-item-text">Reservations</span>
+                    @php $pendingReservations = \App\Models\Reservation::where('status','pending')->count(); @endphp
+                    @if($pendingReservations > 0) <span class="nav-badge">{{$pendingReservations}}</span> @endif
                 </a>
             </div>
 
             <div class="nav-section">
                 <div class="nav-section-title">Finance</div>
-                
                 <a href="{{ route('admin.wallet.index') }}" class="nav-item {{request()->routeIs('admin.wallet.*')?'active':''}}">
-                    <i class="fa-solid fa-wallet"></i>
-                    <span class="nav-item-text">Wallet Management</span>
+                    <i class="fa-solid fa-wallet"></i><span class="nav-item-text">Wallet Management</span>
                 </a>
             </div>
 
             <div class="nav-section">
                 <div class="nav-section-title">Reports</div>
-                
                 <a href="{{ route('admin.analytics.index') }}" class="nav-item {{request()->routeIs('admin.analytics.*')?'active':''}}">
-                    <i class="fa-solid fa-chart-line"></i>
-                    <span class="nav-item-text">Analytics</span>
+                    <i class="fa-solid fa-chart-line"></i><span class="nav-item-text">Analytics</span>
                 </a>
-
-                <div class="nav-item" x-data="{ exportOpen: false }" @click.away="exportOpen = false">
-                    <div @click="exportOpen = !exportOpen" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;width:100%;">
-                        <div style="display:flex;align-items:center;gap:.85rem;">
-                            <i class="fa-solid fa-file-export"></i>
-                            <span class="nav-item-text">Export Data</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down" :class="{'rotate-180': exportOpen}" style="font-size: 0.8rem; transition: transform 0.2s;"></i>
-                    </div>
-                    <div class="dropdown-menu" 
-                         :class="{'show': exportOpen}" 
-                         style="position:relative; top:0; left:0; width:100%; box-shadow:none; background:rgba(255,255,255,0.05); margin-top:5px; border-radius:8px; padding:5px; border:none; transform:none; opacity:1; visibility:visible; display:none;" 
-                         x-show="exportOpen" 
-                         x-transition.opacity>
-                        <a href="{{ route('admin.export.users') }}?format=csv" class="dropdown-item" style="color:rgba(255,255,255,0.8); font-size:0.85rem;">
-                            <i class="fa-solid fa-user" style="color:rgba(255,255,255,0.5); font-size:0.9rem;"></i> Users (CSV)
-                        </a>
-                        <a href="{{ route('admin.export.reservations') }}?format=csv" class="dropdown-item" style="color:rgba(255,255,255,0.8); font-size:0.85rem;">
-                            <i class="fa-solid fa-calendar-check" style="color:rgba(255,255,255,0.5); font-size:0.9rem;"></i> Reservations (CSV)
-                        </a>
-                        <a href="{{ route('admin.export.facilities') }}?format=csv" class="dropdown-item" style="color:rgba(255,255,255,0.8); font-size:0.85rem;">
-                            <i class="fa-solid fa-building" style="color:rgba(255,255,255,0.5); font-size:0.9rem;"></i> Facilities (CSV)
-                        </a>
-                        <a href="{{ route('admin.export.guests') }}?format=csv" class="dropdown-item" style="color:rgba(255,255,255,0.8); font-size:0.85rem;">
-                            <i class="fa-solid fa-user-group" style="color:rgba(255,255,255,0.5); font-size:0.9rem;"></i> Guest Requests (CSV)
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ route('admin.export.index') }}" class="nav-item {{request()->routeIs('admin.export.*')?'active':''}}">
+                    <i class="fa-solid fa-file-export"></i><span class="nav-item-text">Export Data</span>
+                </a>
             </div>
         </nav>
 
         <div class="sidebar-user" x-data="{ profileDropdown: false }" @click.away="profileDropdown = false">
             <div class="user-profile" @click.stop="profileDropdown = !profileDropdown">
-                <div class="user-avatar">
-                    {{strtoupper(substr(Auth::user()->name,0,1))}}
-                </div>
-                <div class="user-info">
-                    <span class="user-name">{{Auth::user()->name}}</span>
-                    <span class="user-role">Administrator</span>
-                </div>
+                <div class="user-avatar">{{strtoupper(substr(Auth::user()->name,0,1))}}</div>
+                <div class="user-info"><span class="user-name">{{Auth::user()->name}}</span><span class="user-role">Administrator</span></div>
                 <i class="fa-solid fa-chevron-down" :class="{'rotate-180': profileDropdown}"></i>
             </div>
-
-            <div class="dropdown-menu" 
-                 :class="{'show': profileDropdown}"
-                 style="bottom: 80px; top: auto; left: 1rem; right: 1rem;">
+            <div class="dropdown-menu" :class="{'show': profileDropdown}" style="bottom: 100%; top: auto; left: 0.75rem; right: 0.75rem; margin-bottom: 10px;">
+                <div class="dropdown-divider"></div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="dropdown-item logout">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                        <span>Logout</span>
-                    </button>
+                    <button type="submit" class="dropdown-item logout"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></button>
                 </form>
             </div>
         </div>
@@ -576,36 +460,31 @@
 
     <main class="main-content">
         <div class="top-bar">
-            <div style="display:flex;align-items:center;">
-                <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
-                
+            <div style="display:flex;align-items:center;gap:.85rem">
+                <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen"><i class="fa-solid fa-bars"></i></button>
                 <h1 class="top-bar-title">@yield('title','Dashboard')</h1>
             </div>
             
             <div class="top-bar-actions">
                 <div style="position: relative;">
-                    <button class="notification-btn" id="notificationButton">
-                        <i class="fa-solid fa-bell"></i>
-                        <span class="notification-badge" style="display:none;">0</span>
-                    </button>
-
+      <button class="notification-btn" id="notificationButton">
+    <i class="fa-solid fa-bell"></i>
+    {{-- FIX: Query your custom Notification model directly by user_id --}}
+    @php 
+        $unreadCount = \App\Models\Notification::where('user_id', auth()->id())
+                        ->where('is_read', false)
+                        ->count(); 
+    @endphp
+    
+    <span class="notification-badge {{ $unreadCount > 0 ? 'has-unread' : '' }}" 
+          style="{{ $unreadCount > 0 ? '' : 'display:none;' }}">
+        {{ $unreadCount }}
+    </span>
+</button>
                     <div id="notificationDropdown" class="notification-dropdown">
-                        <div class="notification-header">
-                            <h3>Notifications</h3>
-                            <button id="markAllRead" class="mark-all-read">Mark all read</button>
-                        </div>
-                        <div id="notificationList" class="notification-list">
-                            <div style="padding:2rem;text-align:center;">
-                                <div class="loading-spinner"></div>
-                            </div>
-                        </div>
-                        <div class="notification-footer">
-                            <a href="{{ route('admin.reservations.index', ['status' => 'pending']) }}">
-                                View All Pending Items →
-                            </a>
-                        </div>
+                        <div class="notification-header"><h3>Notifications</h3><button id="markAllRead" class="mark-all-read">Mark all read</button></div>
+                        <div id="notificationList" class="notification-list"><div style="padding:2rem;text-align:center;"><div class="loading-spinner"></div></div></div>
+                        <div class="notification-footer"><a href="{{ route('admin.reservations.index', ['status' => 'pending']) }}">View All Pending Items →</a></div>
                     </div>
                 </div>
             </div>
@@ -613,31 +492,15 @@
 
         <div class="content-wrapper">
             @if(session('success'))
-                <div class="alert alert-success">
-                    <i class="fa-solid fa-circle-check"></i>
-                    <div>
-                        <div class="alert-title">Success!</div>
-                        <div class="alert-message">{{session('success')}}</div>
-                    </div>
-                </div>
+                <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i><div><div class="alert-title">Success!</div><div class="alert-message">{{session('success')}}</div></div></div>
             @endif
-
             @if(session('error'))
-                <div class="alert alert-error">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    <div>
-                        <div class="alert-title">Error!</div>
-                        <div class="alert-message">{{session('error')}}</div>
-                    </div>
-                </div>
+                <div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i><div><div class="alert-title">Error!</div><div class="alert-message">{{session('error')}}</div></div></div>
             @endif
-
             @yield('content')
         </div>
 
-        <footer>
-            <p>© {{date('Y')}} ESFMS. All rights reserved.</p>
-        </footer>
+        <footer><p>© {{date('Y')}} ESFMS. All rights reserved.</p></footer>
     </main>
 
     @stack('scripts')
@@ -653,20 +516,28 @@
         let notifications = [];
         let dropdownOpen = false;
 
-        // Toggle dropdown and load data
+        // 1. Initial Check (Run immediately when page loads)
+        checkNotifications(true);
+
+        // 2. Auto-Check every 30 seconds (Real-time feel)
+        setInterval(() => {
+            if (!dropdownOpen) {
+                checkNotifications(true);
+            }
+        }, 30000);
+
         notificationBtn?.addEventListener('click', function(e) {
             e.stopPropagation();
             dropdownOpen = !dropdownOpen;
-            
             if (dropdownOpen) {
                 notificationDropdown.classList.add('show');
-                loadNotifications();
+                // When clicking, we want to show the spinner (silent = false)
+                checkNotifications(false);
             } else {
                 notificationDropdown.classList.remove('show');
             }
         });
 
-        // Close when clicking outside
         document.addEventListener('click', function(e) {
             if (dropdownOpen && !notificationDropdown.contains(e.target) && !notificationBtn.contains(e.target)) {
                 notificationDropdown.classList.remove('show');
@@ -674,15 +545,15 @@
             }
         });
 
-        // Fetch notifications from server
-        function loadNotifications() {
-            notificationList.innerHTML = '<div style="padding:2rem;text-align:center;"><div class="loading-spinner"></div></div>';
-            
+        // Renamed to 'checkNotifications' and added 'silent' mode
+        function checkNotifications(silent = false) {
+            // Only show spinner if the user actually clicked the button (not for background checks)
+            if (!silent) {
+                notificationList.innerHTML = '<div style="padding:2rem;text-align:center;"><div class="loading-spinner"></div></div>';
+            }
+
             fetch('{{ route("admin.notifications.index") }}')
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     notifications = data.notifications || [];
                     renderNotifications();
@@ -690,56 +561,46 @@
                 })
                 .catch(error => {
                     console.error('Error loading notifications:', error);
-                    notificationList.innerHTML = '<div class="notification-empty"><i class="fa-solid fa-circle-exclamation"></i><p>Failed to load notifications</p></div>';
+                    if (!silent) {
+                        notificationList.innerHTML = '<div class="notification-empty"><i class="fa-solid fa-circle-exclamation"></i><p>Failed to load notifications</p></div>';
+                    }
                 });
         }
 
         function renderNotifications() {
             if (!notifications || notifications.length === 0) {
-                notificationList.innerHTML = `
-                    <div class="notification-empty">
-                        <i class="fa-solid fa-bell-slash"></i>
-                        <p>No notifications</p>
-                    </div>
-                `;
+                notificationList.innerHTML = `<div class="notification-empty"><i class="fa-solid fa-bell-slash"></i><p>No notifications</p></div>`;
                 return;
             }
-
             notificationList.innerHTML = notifications.map(n => `
                 <a href="${n.url}" class="notification-item type-${n.color} ${n.read ? '' : 'unread'}" data-id="${n.id}">
                     <div class="notification-content">
-                        <div class="notification-icon ${n.color}">
-                            <i class="fa-solid ${n.icon}"></i>
-                        </div>
+                        <div class="notification-icon ${n.color}"><i class="fa-solid ${n.icon}"></i></div>
                         <div class="notification-text">
                             <div class="notification-title">${n.title}</div>
                             <div class="notification-message">${n.message}</div>
-                            <div class="notification-details">${n.details}</div>
                             <div class="notification-time">${n.time}</div>
                         </div>
                     </div>
                 </a>
             `).join('');
             
+            // Re-attach click listeners
             document.querySelectorAll('.notification-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    markAsRead(this.dataset.id);
-                });
+                item.addEventListener('click', function() { markAsRead(this.dataset.id); });
             });
         }
 
         function markAsRead(id) {
             fetch('{{ route("admin.notifications.mark-read") }}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
                 body: JSON.stringify({ id: id })
             });
             const item = notifications.find(n => n.id === id);
             if(item) item.read = true;
             renderNotifications();
+            // Recalculate badge locally immediately
             const unread = notifications.filter(n => !n.read).length;
             updateBadge(unread);
         }
@@ -748,13 +609,8 @@
             e.stopPropagation();
             fetch('{{ route("admin.notifications.mark-all-read") }}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+            }).then(response => response.json()).then(data => {
                 if(data.success) {
                     notifications.forEach(n => n.read = true);
                     renderNotifications();
@@ -775,12 +631,6 @@
                 }
             }
         }
-
-        // Initial badge check on page load
-        fetch('{{ route("admin.notifications.index") }}')
-            .then(response => response.json())
-            .then(data => updateBadge(data.unread_count))
-            .catch(console.error);
     });
     </script>
 </body>

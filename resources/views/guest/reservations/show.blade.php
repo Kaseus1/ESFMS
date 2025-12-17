@@ -5,7 +5,6 @@
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="container mx-auto px-4 max-w-7xl">
-        <!-- Breadcrumb Navigation -->
         <nav class="flex items-center space-x-2 text-sm text-gray-500 mb-6">
             <a href="{{ route('guest.reservations.index') }}" class="hover:text-[#002147] transition-colors">
                 <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -19,36 +18,9 @@
             <span class="text-gray-900 font-medium">Reservation #{{ $reservation->id }}</span>
         </nav>
 
-        <!-- Alert Messages -->
-        @if(session('success'))
-            <div class="mb-6 bg-green-50 border-l-4 border-green-500 rounded-r-lg p-4 shadow-sm animate-slide-down">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
-                    <p class="ml-3 text-sm font-medium text-green-800">{{ session('success') }}</p>
-                </div>
-            </div>
-        @endif
+        {{-- [REMOVED] Duplicate Alert Messages Block was here --}}
 
-        @if(session('error'))
-            <div class="mb-6 bg-red-50 border-l-4 border-red-500 rounded-r-lg p-4 shadow-sm animate-slide-down">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
-                    <p class="ml-3 text-sm font-medium text-red-800">{{ session('error') }}</p>
-                </div>
-            </div>
-        @endif
-
-        <!-- Header Card with Gradient -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-200">
-            <!-- Hero Section -->
             <div class="relative bg-gradient-to-r from-[#002147] via-[#003366] to-[#004080] px-8 py-10">
                 <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
                 <div class="relative">
@@ -102,7 +74,6 @@
                             </div>
                         </div>
 
-                        <!-- Status Badge -->
                         <div class="flex-shrink-0">
                             @if($reservation->status === 'approved')
                                 <div class="inline-flex items-center px-5 py-3 rounded-xl text-base font-bold bg-green-500 text-white shadow-lg">
@@ -138,7 +109,6 @@
                 </div>
             </div>
 
-            <!-- Action Bar -->
             <div class="bg-gray-50 px-8 py-4 border-t border-gray-200">
                 <div class="flex flex-wrap items-center gap-3">
                     <a href="{{ route('guest.reservations.index') }}" 
@@ -186,11 +156,8 @@
             </div>
         </div>
 
-        <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Column - Main Details -->
             <div class="lg:col-span-2 space-y-6">
-                <!-- Event Information Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                     <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                         <h2 class="text-xl font-bold text-gray-900 flex items-center">
@@ -276,7 +243,6 @@
                     </div>
                 </div>
 
-                <!-- Recurring Information -->
                 @if($reservation->is_recurring)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                     <div class="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-purple-200">
@@ -322,7 +288,6 @@
                 </div>
                 @endif
 
-                <!-- Setup & Equipment -->
                 @if($reservation->requires_setup || $reservation->requires_equipment)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                     <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-blue-200">
@@ -369,9 +334,7 @@
                 @endif
             </div>
 
-            <!-- Right Column - Sidebar -->
             <div class="lg:col-span-1 space-y-6">
-                <!-- Facility Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow sticky top-6">
                     <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                         <h3 class="text-lg font-bold text-gray-900 flex items-center">
@@ -432,7 +395,6 @@
                     @endif
                 </div>
 
-                <!-- Quick Stats Card -->
                 <div class="bg-gradient-to-br from-[#002147] via-[#003366] to-[#004080] rounded-xl shadow-lg overflow-hidden text-white">
                     <div class="px-6 py-4 border-b border-white/10">
                         <h3 class="text-lg font-bold flex items-center">
@@ -503,7 +465,6 @@
                     </div>
                 </div>
 
-                <!-- Timeline Card -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                     <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                         <h3 class="text-lg font-bold text-gray-900 flex items-center">
@@ -518,7 +479,6 @@
                     <div class="p-6">
                         <div class="flow-root">
                             <ul class="space-y-4">
-                                <!-- Created -->
                                 <li class="relative">
                                     <div class="relative flex items-start space-x-3">
                                         <div class="relative">
@@ -540,7 +500,6 @@
                                     </div>
                                 </li>
                                 
-                                <!-- Updated -->
                                 @if($reservation->updated_at->ne($reservation->created_at))
                                 <li class="relative">
                                     <div class="relative flex items-start space-x-3">
@@ -562,7 +521,6 @@
                                 </li>
                                 @endif
                                 
-                                <!-- Current Status -->
                                 <li class="relative">
                                     <div class="relative flex items-start space-x-3">
                                         <div class="relative">

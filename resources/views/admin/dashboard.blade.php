@@ -1,467 +1,342 @@
 @extends('layouts.admin')
 
-@section('title', 'Dashboard')
-
-@push('head-scripts')
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
-<style>
-    .dashboard-stats {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    @media (min-width: 768px) {
-        .dashboard-stats { grid-template-columns: repeat(4, 1fr); }
-    }
-    .stat-card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 1.25rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        border-left: 4px solid;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .stat-card .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        color: #fff;
-    }
-    .stat-card .stat-value {
-        font-size: 1.75rem;
-        font-weight: 800;
-        margin-top: 0.25rem;
-    }
-    .stat-card .stat-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-    @media (min-width: 1024px) {
-        .dashboard-grid { grid-template-columns: 2fr 1fr; }
-    }
-    
-    .calendar-container {
-        background: #fff;
-        border-radius: 16px;
-        padding: 1.25rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    @media (min-width: 640px) {
-        .calendar-container { padding: 1.5rem; }
-    }
-    
-    .calendar-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-    .calendar-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #1e293b;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .fc { font-family: 'Inter', sans-serif; }
-    .fc .fc-toolbar { flex-wrap: wrap; gap: 0.5rem; }
-    .fc .fc-toolbar-title {
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        color: #1e293b;
-    }
-    .fc .fc-button {
-        background: linear-gradient(135deg, #10b981, #059669) !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 0.4rem 0.75rem !important;
-        font-weight: 600 !important;
-        font-size: 0.8rem !important;
-        box-shadow: 0 2px 8px rgba(16,185,129,0.3) !important;
-        transition: all 0.2s !important;
-    }
-    .fc .fc-button:hover {
-        background: linear-gradient(135deg, #059669, #047857) !important;
-        transform: translateY(-1px);
-    }
-    .fc .fc-button-active {
-        background: linear-gradient(135deg, #059669, #047857) !important;
-    }
-    .fc .fc-daygrid-day { transition: background 0.2s; }
-    .fc .fc-daygrid-day:hover { background: #f0fdf4; }
-    .fc .fc-daygrid-day-number { font-weight: 600; color: #334155; padding: 0.5rem; }
-    .fc .fc-day-today { background: linear-gradient(135deg, #ecfdf5, #d1fae5) !important; }
-    .fc .fc-event {
-        border-radius: 6px !important;
-        padding: 2px 6px !important;
-        font-size: 0.75rem !important;
-        font-weight: 600 !important;
-        border: none !important;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .fc .fc-event:hover {
-        transform: scale(1.02);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    .fc .fc-event-approved { background: linear-gradient(135deg, #10b981, #059669) !important; }
-    .fc .fc-event-pending { background: linear-gradient(135deg, #f59e0b, #d97706) !important; }
-    .fc .fc-event-rejected { background: linear-gradient(135deg, #ef4444, #dc2626) !important; }
-    .fc .fc-event-cancelled { background: linear-gradient(135deg, #6b7280, #4b5563) !important; }
-    
-    .calendar-legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e2e8f0;
-    }
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.75rem;
-        color: #64748b;
-    }
-    .legend-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 4px;
-    }
-    
-    @media (max-width: 640px) {
-        .fc .fc-toolbar { flex-direction: column; align-items: stretch; }
-        .fc .fc-toolbar-chunk { display: flex; justify-content: center; }
-        .fc .fc-daygrid-event { font-size: 0.65rem !important; padding: 1px 3px !important; }
-        .fc .fc-col-header-cell-cushion { font-size: 0.75rem; }
-    }
-    
-    .sidebar-section {
-        background: #fff;
-        border-radius: 16px;
-        padding: 1.25rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .section-title {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .pending-item {
-        display: flex;
-        gap: 0.75rem;
-        padding: 0.875rem;
-        border-radius: 10px;
-        background: #f8fafc;
-        margin-bottom: 0.5rem;
-        transition: all 0.2s;
-        border-left: 3px solid #f59e0b;
-        text-decoration: none;
-        color: inherit;
-    }
-    .pending-item:hover {
-        background: #f1f5f9;
-        transform: translateX(4px);
-    }
-    .pending-item:last-child { margin-bottom: 0; }
-    .pending-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        font-size: 1rem;
-    }
-    .pending-details { flex: 1; min-width: 0; }
-    .pending-title {
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 0.875rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .pending-meta {
-        font-size: 0.75rem;
-        color: #64748b;
-        margin-top: 0.25rem;
-    }
-    
-    .view-all-btn {
-        display: block;
-        width: 100%;
-        padding: 0.75rem;
-        text-align: center;
-        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-        color: #059669;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        text-decoration: none;
-        margin-top: 1rem;
-        transition: all 0.2s;
-    }
-    .view-all-btn:hover {
-        background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-        transform: translateY(-2px);
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 2rem 1rem;
-        color: #94a3b8;
-    }
-    .empty-state i {
-        font-size: 2.5rem;
-        margin-bottom: 0.75rem;
-        opacity: 0.3;
-    }
-</style>
-@endpush
-
 @section('content')
-<!-- Stats Cards -->
-<div class="dashboard-stats">
-    <div class="stat-card" style="border-color: #3b82f6;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <p class="stat-label">Total Users</p>
-                <p class="stat-value" style="color: #3b82f6;">{{ $totalUsers ?? 0 }}</p>
-            </div>
-            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
-                <i class="fa-solid fa-users"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="stat-card" style="border-color: #8b5cf6;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <p class="stat-label">Facilities</p>
-                <p class="stat-value" style="color: #8b5cf6;">{{ $totalFacilities ?? 0 }}</p>
-            </div>
-            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
-                <i class="fa-solid fa-building"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="stat-card" style="border-color: #f59e0b;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <p class="stat-label">Pending</p>
-                <p class="stat-value" style="color: #f59e0b;">{{ $pendingReservationsCount ?? 0 }}</p>
-            </div>
-            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                <i class="fa-solid fa-clock"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="stat-card" style="border-color: #10b981;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <p class="stat-label">Approved</p>
-                <p class="stat-value" style="color: #10b981;">{{ $approvedReservationsCount ?? 0 }}</p>
-            </div>
-            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
-                <i class="fa-solid fa-check-circle"></i>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Main Grid: Calendar + Sidebar -->
-<div class="dashboard-grid">
-    <!-- Calendar Section -->
-    <div class="calendar-container">
-        <div class="calendar-header">
-            <h3 class="calendar-title">
-                <i class="fa-solid fa-calendar" style="color: #10b981;"></i>
-                Reservations Calendar
-            </h3>
-            <a href="{{ route('admin.reservations.index') }}" style="font-size: 0.875rem; color: #10b981; font-weight: 600; text-decoration: none;">
-                View All →
+@if(session('success'))
+    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative animate-slide-in" role="alert">
+        <span class="block sm:inline">{{ session('success') }}</span>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative animate-slide-in" role="alert">
+        <span class="block sm:inline">{{ session('error') }}</span>
+    </div>
+@endif
+
+<div class="space-y-6">
+    {{-- Welcome Banner --}}
+    <div class="bg-gradient-to-r from-[#002366] via-[#00285C] to-[#001A4A] rounded-2xl shadow-xl p-8 text-white overflow-hidden relative">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+        <div class="relative z-10 flex items-center justify-between">
+            <div class="max-w-2xl">
+                <h2 class="text-3xl md:text-4xl font-bold mb-3">Welcome back, {{ auth()->user()->name }}!</h2>
+               
+            </div>
+            <div class="hidden lg:block">
+                <svg class="w-40 h-40 text-blue-200 opacity-30" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    {{-- Stats Cards --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <a href="{{ route('admin.facilities.index') }}" 
+           class="group bg-white shadow-md rounded-xl p-6 border-l-4 border-[#002366] hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="bg-[#333C4D] bg-opacity-10 rounded-lg p-3 group-hover:bg-[#333C4D] bg-opacity-20 transition-colors">
+                    <svg class="w-8 h-8 text-[#002366]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 group-hover:text-[#002366] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+            <h4 class="text-sm font-semibold text-[#333C4D] mb-2 uppercase tracking-wide">Total Facilities</h4>
+            <p class="text-4xl font-bold text-[#002366] mb-2">{{ $stats['total_facilities'] ?? 0 }}</p>
+            <p class="text-xs text-gray-500 group-hover:text-[#002366] transition-colors flex items-center gap-1">
+                View all 
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+            </p>
+        </a>
+
+        <a href="{{ route('admin.reservations.index') }}" 
+           class="group bg-white shadow-md rounded-xl p-6 border-l-4 border-gray-400 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="bg-gray-100 rounded-lg p-3 group-hover:bg-gray-200 transition-colors">
+                    <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+                <div class="bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full">
+                    {{ $stats['total_reservations'] ?? 0 }}
+                </div>
+            </div>
+            <h4 class="text-sm font-semibold text-[#333C4D] mb-2 uppercase tracking-wide">Total Bookings</h4>
+            <p class="text-4xl font-bold text-[#333C4D] mb-2">{{ $stats['total_reservations'] ?? 0 }}</p>
+            <p class="text-xs text-gray-500 group-hover:text-[#333C4D] transition-colors">Click to manage</p>
+        </a>
+
+        <a href="{{ route('admin.reservations.index', ['status' => 'pending']) }}" 
+           class="group bg-white shadow-md rounded-xl p-6 border-l-4 border-yellow-500 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 relative">
+            <div class="flex items-center justify-between mb-4">
+                <div class="bg-yellow-100 rounded-lg p-3 group-hover:bg-yellow-200 transition-colors">
+                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                @if(($stats['pending_reservations'] ?? 0) > 0)
+                <div class="absolute -top-2 -right-2">
+                    <span class="relative flex h-4 w-4">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-4 w-4 bg-yellow-500"></span>
+                    </span>
+                </div>
+                @endif
+            </div>
+            <h4 class="text-sm font-semibold text-[#333C4D] mb-2 uppercase tracking-wide">Pending</h4>
+            <p class="text-4xl font-bold text-yellow-600 mb-2">{{ $stats['pending_reservations'] ?? 0 }}</p>
+            <p class="text-xs text-yellow-600 font-medium group-hover:text-yellow-700 transition-colors">⚠️ Needs approval</p>
+        </a>
+
+        <a href="{{ route('admin.reservations.index', ['status' => 'approved']) }}" 
+           class="group bg-white shadow-md rounded-xl p-6 border-l-4 border-green-500 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="bg-green-100 rounded-lg p-3 group-hover:bg-green-200 transition-colors">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="text-green-600 text-xl">✓</div>
+            </div>
+            <h4 class="text-sm font-semibold text-[#333C4D] mb-2 uppercase tracking-wide">Approved</h4>
+            <p class="text-4xl font-bold text-green-600 mb-2">{{ $stats['approved_reservations'] ?? 0 }}</p>
+            <p class="text-xs text-gray-500 group-hover:text-green-600 transition-colors">Confirmed bookings</p>
+        </a>
+
+        <a href="{{ route('admin.reservations.index', ['status' => 'rejected']) }}" 
+           class="group bg-white shadow-md rounded-xl p-6 border-l-4 border-red-500 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="bg-red-100 rounded-lg p-3 group-hover:bg-red-200 transition-colors">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </div>
+            </div>
+            <h4 class="text-sm font-semibold text-[#333C4D] mb-2 uppercase tracking-wide">Rejected</h4>
+            <p class="text-4xl font-bold text-red-600 mb-2">{{ $stats['rejected_reservations'] ?? 0 }}</p>
+            <p class="text-xs text-gray-500 group-hover:text-red-600 transition-colors">Declined requests</p>
+        </a>
+    </div>
+
+    {{-- Quick Actions Bar --}}
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-[#002366]">
+        <h3 class="text-lg font-bold text-[#172030] mb-4 flex items-center gap-2">
+            <svg class="w-6 h-6 text-[#002366]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            Quick Actions
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <a href="{{ route('admin.facilities.create') }}" class="group flex items-center justify-center gap-3 bg-gradient-to-r from-[#002366] to-[#00285C] hover:from-[#00285C] hover:to-[#001A4A] text-white px-5 py-4 rounded-lg shadow-md hover:shadow-xl transition-all transform hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span class="font-semibold">Add Facility</span>
+            </a>
+            <a href="{{ route('admin.reservations.index', ['status' => 'pending']) }}" class="group flex items-center justify-center gap-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-5 py-4 rounded-lg shadow-md hover:shadow-xl transition-all transform hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="font-semibold">Review Pending</span>
+            </a>
+            <a href="{{ route('admin.users.index') }}" class="group flex items-center justify-center gap-3 bg-gradient-to-r from-[#002366] to-[#00285C] hover:from-[#00285C] hover:to-[#001A4A] text-white px-5 py-4 rounded-lg shadow-md hover:shadow-xl transition-all transform hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <span class="font-semibold">Manage Users</span>
+            </a>
+            <a href="{{ route('admin.guests.index') }}" class="group flex items-center justify-center gap-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-5 py-4 rounded-lg shadow-md hover:shadow-xl transition-all transform hover:scale-105">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="font-semibold">Manage Guests</span>
             </a>
         </div>
-        <div id="adminCalendar"></div>
-        <div class="calendar-legend">
-            <div class="legend-item">
-                <div class="legend-dot" style="background: linear-gradient(135deg, #10b981, #059669);"></div>
-                <span>Approved</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-dot" style="background: linear-gradient(135deg, #f59e0b, #d97706);"></div>
-                <span>Pending</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-dot" style="background: linear-gradient(135deg, #ef4444, #dc2626);"></div>
-                <span>Rejected</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-dot" style="background: linear-gradient(135deg, #6b7280, #4b5563);"></div>
-                <span>Cancelled</span>
-            </div>
-        </div>
     </div>
 
-    <!-- Sidebar -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <!-- Pending Reservations -->
-        <div class="sidebar-section">
-            <h3 class="section-title">
-                <i class="fa-solid fa-clock" style="color: #f59e0b;"></i>
-                Pending Reservations
-            </h3>
-            
-            @if(isset($pendingReservations) && $pendingReservations->count() > 0)
-                @foreach($pendingReservations->take(5) as $reservation)
-                    <a href="{{ route('admin.reservations.show', $reservation) }}" class="pending-item">
-                        <div class="pending-icon" style="background: #fef3c7; color: #d97706;">
-                            <i class="fa-solid fa-calendar-check"></i>
-                        </div>
-                        <div class="pending-details">
-                            <div class="pending-title">{{ $reservation->event_name ?? 'Reservation' }}</div>
-                            <div class="pending-meta">
-                                {{ $reservation->facility->name ?? 'N/A' }} • {{ $reservation->user->name ?? 'N/A' }}
-                            </div>
-                            <div class="pending-meta">
-                                {{ $reservation->start_time->format('M d, Y g:i A') }}
-                            </div>
-                        </div>
-                    </a>
-                @endforeach
-                
-                <a href="{{ route('admin.reservations.index', ['status' => 'pending']) }}" class="view-all-btn">
-                    View All Pending →
-                </a>
-            @else
-                <div class="empty-state">
-                    <i class="fa-solid fa-check-circle"></i>
-                    <p>No pending reservations</p>
+    {{-- Calendar & Recent Activity --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {{-- Calendar --}}
+        <div class="lg:col-span-2 bg-white shadow-xl rounded-xl p-6 border-t-4 border-[#002366]">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+                <h2 class="text-2xl font-bold text-[#172030] flex items-center gap-2">
+                    <svg class="w-7 h-7 text-[#002366]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Reservation Calendar
+                </h2>
+                <div class="flex flex-wrap gap-3 text-sm">
+                    <span class="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-800 rounded-lg font-medium shadow-sm">
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        Approved
+                    </span>
+                    <span class="flex items-center gap-2 px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-medium shadow-sm">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        Pending
+                    </span>
+                    <span class="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-800 rounded-lg font-medium shadow-sm">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        Rejected
+                    </span>
                 </div>
-            @endif
+            </div>
+            <div id="adminCalendar" class="rounded-lg" style="min-height: 500px;"></div>
         </div>
 
-        <!-- Pending Guests -->
-        <div class="sidebar-section">
-            <h3 class="section-title">
-                <i class="fa-solid fa-user-clock" style="color: #3b82f6;"></i>
-                Pending Guests
-            </h3>
-            
-            @if(isset($pendingGuestsData) && $pendingGuestsData->count() > 0)
-                @foreach($pendingGuestsData->take(5) as $guest)
-                    <a href="{{ route('admin.guests.show', $guest) }}" class="pending-item" style="border-left-color: #3b82f6;">
-                        <div class="pending-icon" style="background: #dbeafe; color: #2563eb;">
-                            <i class="fa-solid fa-user"></i>
-                        </div>
-                        <div class="pending-details">
-                            <div class="pending-title">{{ $guest->name }}</div>
-                            <div class="pending-meta">{{ $guest->email }}</div>
-                            <div class="pending-meta">{{ $guest->created_at->diffForHumans() }}</div>
-                        </div>
-                    </a>
-                @endforeach
-                
-                <a href="{{ route('admin.guests.index', ['status' => 'pending']) }}" class="view-all-btn" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb;">
-                    View All Pending →
+        {{-- Recent Activity --}}
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-[#002366]">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-[#172030] flex items-center gap-2">
+                    <svg class="w-6 h-6 text-[#002366]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Recent Activity
+                </h3>
+                <a href="{{ route('admin.reservations.index') }}" class="text-sm text-[#002366] hover:underline flex items-center gap-1 font-medium">
+                    View All
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
                 </a>
-            @else
-                <div class="empty-state">
-                    <i class="fa-solid fa-user-check"></i>
-                    <p>No pending guests</p>
+            </div>
+            
+            <div class="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
+                @forelse($recentReservations as $res)
+                <a href="{{ route('admin.reservations.show', $res->id) }}" 
+                   class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-all group border border-transparent hover:border-[#333C4D]">
+                    <div class="flex-shrink-0 mt-0.5">
+                        @if($res->status === 'pending')
+                            <div class="w-2.5 h-2.5 bg-yellow-500 rounded-full animate-pulse"></div>
+                        @elseif($res->status === 'approved')
+                            <div class="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                        @elseif($res->status === 'rejected')
+                            <div class="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+                        @else
+                            <div class="w-2.5 h-2.5 bg-gray-500 rounded-full"></div>
+                        @endif
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-[#333C4D] group-hover:text-[#002366] transition truncate">
+                            {{ $res->event_name }}
+                        </p>
+                        <p class="text-xs text-[#333C4D] mt-0.5 opacity-60">
+                            <span class="font-medium">{{ $res->facility?->name ?? 'Facility Deleted' }}</span> • {{ $res->user?->name ?? 'User Deleted' }}
+                        </p>
+                        <p class="text-xs text-[#333C4D] mt-1 opacity-40">
+                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {{ $res->created_at->diffForHumans() }}
+                        </p>
+                    </div>
+                </a>
+                @empty
+                <div class="flex flex-col items-center justify-center py-12">
+                    <svg class="w-16 h-16 text-[#333C4D] opacity-20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                    </svg>
+                    <p class="text-center text-[#333C4D] font-medium opacity-60">No recent activity</p>
                 </div>
-            @endif
+                @endforelse
+            </div>
         </div>
     </div>
 </div>
-@endsection
+
+<style>
+@keyframes slide-in {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-in { animation: slide-in 0.3s ease-out; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+/* FullCalendar Mobile Adjustments */
+@media (max-width: 768px) {
+    .fc-toolbar { flex-direction: column; gap: 0.5rem; }
+    .fc-toolbar-title { font-size: 1.1rem !important; margin-bottom: 0.5rem; }
+    .fc-button { font-size: 0.8rem !important; padding: 0.4rem 0.6rem !important; }
+}
+</style>
+
+@endsection 
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('adminCalendar');
-    
+    const calendarEl = document.getElementById('adminCalendar');
+    const isMobile = window.innerWidth < 768;
+
     if (calendarEl) {
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: window.innerWidth < 768 ? 'listMonth,dayGridMonth' : 'dayGridMonth,dayGridWeek,listMonth'
-            },
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: isMobile ? 'listWeek' : 'dayGridMonth',
             height: 'auto',
-            events: function(info, successCallback, failureCallback) {
-                fetch('{{ route("admin.dashboard.events") }}?start=' + info.startStr + '&end=' + info.endStr)
-                    .then(response => response.json())
-                    .then(data => successCallback(data))
-                    .catch(error => {
-                        console.error('Error fetching events:', error);
-                        failureCallback(error);
-                    });
+            contentHeight: isMobile ? 500 : 600,
+            headerToolbar: {
+                left: 'prev,next',
+                center: 'title',
+                right: isMobile ? 'listWeek,timeGridDay' : 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            buttonText: {
+                today: 'Today',
+                month: 'Month',
+                week: 'Week',
+                day: 'Day',
+                list: 'List'
+            },
+            events: "{{ route('admin.dashboard.events') }}",
+            eventDidMount: function(info) {
+                const status = info.event.extendedProps.status;
+                const colors = {
+                    'approved': { bg: '#10B981', border: '#059669' },
+                    'pending': { bg: '#F59E0B', border: '#D97706' },
+                    'rejected': { bg: '#EF4444', border: '#DC2626' },
+                    'cancelled': { bg: '#6B7280', border: '#4B5563' },
+                    'default': { bg: '#3B82F6', border: '#2563EB' }
+                };
+                
+                const style = colors[status] || colors['default'];
+                info.el.style.backgroundColor = style.bg;
+                info.el.style.borderColor = style.border;
+                info.el.style.color = '#fff';
+                info.el.style.borderRadius = '6px';
+                info.el.style.padding = '2px 6px';
+                info.el.style.cursor = 'pointer';
+                info.el.style.fontSize = '0.8rem';
+                
+                // Tooltip
+                const tooltip = `Title: ${info.event.title}\nStatus: ${status}`;
+                info.el.setAttribute('title', tooltip);
             },
             eventClick: function(info) {
-                Swal.fire({
-                    title: info.event.title,
-                    html: `
-                        <div style="text-align: left; padding: 1rem 0;">
-                            <p style="margin-bottom: 0.5rem;"><strong>Facility:</strong> ${info.event.extendedProps.facility}</p>
-                            <p style="margin-bottom: 0.5rem;"><strong>Reserved by:</strong> ${info.event.extendedProps.user}</p>
-                            <p style="margin-bottom: 0.5rem;"><strong>Status:</strong> <span style="text-transform: capitalize;">${info.event.extendedProps.status}</span></p>
-                            <p style="margin-bottom: 0.5rem;"><strong>Start:</strong> ${info.event.start.toLocaleString()}</p>
-                            <p><strong>End:</strong> ${info.event.end ? info.event.end.toLocaleString() : 'N/A'}</p>
-                        </div>
-                    `,
-                    showCancelButton: true,
-                    confirmButtonText: 'View Details',
-                    cancelButtonText: 'Close',
-                    confirmButtonColor: '#10b981',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '{{ route("admin.reservations.index") }}/' + info.event.id;
-                    }
-                });
-            },
-            eventDidMount: function(info) {
-                info.el.title = info.event.title + ' - ' + info.event.extendedProps.facility + ' (' + info.event.extendedProps.status + ')';
+                window.location.href = `/admin/reservations/${info.event.id}`;
             },
             windowResize: function(view) {
                 if (window.innerWidth < 768) {
-                    calendar.changeView('listMonth');
+                    calendar.changeView('listWeek');
+                    calendar.setOption('headerToolbar', {
+                        left: 'prev,next',
+                        center: 'title',
+                        right: 'listWeek,timeGridDay'
+                    });
                 } else {
                     calendar.changeView('dayGridMonth');
+                    calendar.setOption('headerToolbar', {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,listWeek'
+                    });
                 }
             }
         });

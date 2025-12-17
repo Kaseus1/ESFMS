@@ -2,75 +2,61 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Reservation;
-use App\Models\Facility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use App\Models\Reservation;
+use App\Models\Facility;
 
 class StudentDashboardController extends Controller
 {
     public function index()
     {
         $user = Auth::user();
-        
-        // Get statistics
-        $totalReservations = Reservation::where('user_id', $user->id)
-            ->whereHas('facility')
-            ->count();
 
-        $approvedReservations = Reservation::where('user_id', $user->id)
-            ->where('status', 'approved')
-            ->whereHas('facility')
-            ->count();
+        if (!$user) {
+            return redirect()->route('login');
+        }
 
-        $pendingReservations = Reservation::where('user_id', $user->id)
-            ->where('status', 'pending')
-            ->whereHas('facility')
-            ->count();
-
-        $rejectedReservations = Reservation::where('user_id', $user->id)
-            ->where('status', 'rejected')
-            ->whereHas('facility')
-            ->count();
-
+        // 1. Statistics
+        $totalReservations = Reservation::where('user_id', $user->id)->count();
+        $pendingReservations = Reservation::where('user_id', $user->id)->where('status', 'pending')->count();
+        $approvedReservations = Reservation::where('user_id', $user->id)->where('status', 'approved')->count();
+        $rejectedReservations = Reservation::where('user_id', $user->id)->where('status', 'rejected')->count();
         $totalFacilities = Facility::count();
 
-        // Upcoming reservations
+        // 2. Upcoming Reservations (Next 5)
+        // We filter out reservations where facility might be hard-deleted to prevent view crashes
         $upcomingReservations = Reservation::with('facility')
             ->where('user_id', $user->id)
-            ->whereIn('status', ['approved', 'pending'])
-            ->where('start_time', '>', now())
-            ->whereHas('facility')
+            ->where('start_time', '>=', now())
+            ->where('status', '!=', 'cancelled')
+            ->whereHas('facility') // Only get if facility exists
             ->orderBy('start_time', 'asc')
             ->limit(5)
             ->get();
 
-        // Recent reservations
+        // 3. Recent Activity (Last 5)
         $recentReservations = Reservation::with('facility')
             ->where('user_id', $user->id)
-            ->whereHas('facility')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
-        // Calendar reservations (for FullCalendar)
+        // 4. Calendar Events
         $calendarReservations = Reservation::with('facility')
             ->where('user_id', $user->id)
-            ->where('start_time', '>=', now()->startOfMonth())
-            ->where('start_time', '<=', now()->addMonths(3)->endOfMonth())
-            ->whereHas('facility')
+            ->where('status', '!=', 'cancelled')
             ->get();
 
         return view('student.dashboard', compact(
             'totalReservations',
-            'approvedReservations',
             'pendingReservations',
+            'approvedReservations',
             'rejectedReservations',
+            'totalFacilities',
             'upcomingReservations',
             'recentReservations',
-            'calendarReservations',
-            'totalFacilities'
+            'calendarReservations'
         ));
     }
 }

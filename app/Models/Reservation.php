@@ -76,6 +76,14 @@ class Reservation extends Model
     }
 
     /**
+     * Get the wallet transactions for the reservation.
+     */
+    public function transactions()
+    {
+        return $this->hasMany(WalletTransaction::class);
+    }
+
+    /**
      * Calculate cost based on hours and facility rate
      */
     public function calculateCost(): float

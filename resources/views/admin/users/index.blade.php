@@ -10,14 +10,17 @@
             <p class="text-[#333C4D] mt-2 opacity-75">Manage system users, faculty, and students</p>
         </div>
         <div class="flex gap-3">
-            <a href="{{ route('admin.guests.index') }}" 
-               class="px-4 py-2 bg-[#172030] text-white rounded-lg hover:bg-[#1D2636] flex items-center shadow-md transition-all">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                </svg>
-                Manage Guests
-            </a>
-        </div>
+<a href="{{ route('admin.guests.index') }}"
+class="px-4 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001A4A] flex items-center shadow-md transition-all justify-center w-full md:w-auto">
+<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+</svg>
+Manage Guests
+</a>
+</div>
+
+
+
     </div>
 
     @if(session('success') || session('error'))
@@ -42,7 +45,7 @@
                 </div>
                 <div>
                     <h3 class="text-sm font-medium">
-                        {{ session('success') ? 'Success' : 'Error' }}
+                        {{ session('success') ? 'Success' : 'Error Encountered' }}
                     </h3>
                     <div class="mt-1 text-sm opacity-90">
                         {{ session('success') ?? session('error') }}
@@ -65,8 +68,8 @@
         $faculty = \App\Models\User::where('role', 'faculty')->count();
         $students = \App\Models\User::where('role', 'student')->count();
     @endphp
-    
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-[#002366] hover:shadow-xl transition h-full">
             <div class="flex justify-between items-start gap-4">
                 <div class="flex-1 min-w-0">
@@ -129,21 +132,19 @@
     </div>
 
     <div class="bg-white rounded-lg shadow-lg mb-6 p-6">
-        <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-wrap gap-4">
-            <div class="flex-1 min-w-[300px]">
-                <div class="relative">
-                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#333C4D] opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <input type="text" 
-                           name="search" 
-                           value="{{ request('search') }}"
-                           placeholder="Search by name or email..."
-                           class="w-full pl-10 pr-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg focus:ring-2 focus:ring-[#002366] focus:border-transparent text-[#172030]">
-                </div>
+        <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-col md:flex-row gap-4">
+            <div class="w-full md:flex-1 relative">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#333C4D] opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" 
+                       name="search" 
+                       value="{{ request('search') }}"
+                       placeholder="Search by name or email..."
+                       class="w-full pl-10 pr-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg focus:ring-2 focus:ring-[#002366] focus:border-transparent text-[#172030]">
             </div>
 
-            <div class="w-full sm:w-48">
+            <div class="w-full md:w-48">
                 <select name="role" class="w-full px-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg focus:ring-2 focus:ring-[#002366] bg-white text-[#172030]">
                     <option value="">All Roles</option>
                     <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
@@ -152,7 +153,7 @@
                 </select>
             </div>
 
-            <div class="w-full sm:w-48">
+            <div class="w-full md:w-48">
                 <select name="status" class="w-full px-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg focus:ring-2 focus:ring-[#002366] bg-white text-[#172030]">
                     <option value="">All Status</option>
                     <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
@@ -161,22 +162,24 @@
                 </select>
             </div>
 
-            <button type="submit" class="px-6 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001A4A] flex items-center font-medium transition shadow-sm">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-                Search
-            </button>
-
-            @if(request('search') || request('role') || request('status'))
-                <a href="{{ route('admin.users.index') }}" 
-                   class="px-6 py-2 bg-[#333C4D] bg-opacity-10 text-[#172030] rounded-lg hover:bg-opacity-20 flex items-center font-medium transition">
+            <div class="flex gap-2 w-full md:w-auto">
+                <button type="submit" class="flex-1 md:flex-none px-6 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001A4A] flex items-center justify-center font-medium transition shadow-sm">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
-                    Clear
-                </a>
-            @endif
+                    Search
+                </button>
+
+                @if(request()->anyFilled(['search', 'role', 'status']))
+                    <a href="{{ route('admin.users.index') }}" 
+                       class="flex-1 md:flex-none px-6 py-2 bg-[#333C4D] bg-opacity-10 text-[#172030] rounded-lg hover:bg-opacity-20 flex items-center justify-center font-medium transition">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Clear
+                    </a>
+                @endif
+            </div>
         </form>
     </div>
 
@@ -222,7 +225,6 @@
                                         </div>
                                     </div>
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-[#172030]">{{ $user->email }}</div>
                                     @if($user->email_verified_at)
@@ -236,7 +238,6 @@
                                         <div class="text-xs text-[#333C4D] opacity-75 mt-1">Not verified</div>
                                     @endif
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full shadow-sm border
                                         {{ $user->role === 'admin' ? 'bg-[#10B981] bg-opacity-10 text-[#10B981] border-[#10B981] border-opacity-20' : 
@@ -245,7 +246,6 @@
                                         {{ ucfirst($user->role) }}
                                     </span>
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full shadow-sm border
                                         {{ $user->status === 'approved' ? 'bg-[#10B981] bg-opacity-10 text-[#10B981] border-[#10B981] border-opacity-20' : 
@@ -254,12 +254,10 @@
                                         {{ ucfirst($user->status) }}
                                     </span>
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-[#172030]">{{ $user->created_at->format('M d, Y') }}</div>
                                     <div class="text-xs text-[#333C4D] opacity-75">{{ $user->created_at->diffForHumans() }}</div>
                                 </td>
-
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <div class="flex items-center justify-center gap-3">
                                         <a href="{{ route('admin.users.show', $user) }}" class="text-[#002366] hover:text-[#001A4A] font-medium transition">View</a>
@@ -280,12 +278,12 @@
                 </table>
             </div>
         @endif
-        
-        @if($users->hasPages())
-            <div class="px-6 py-4 bg-[#FFFFFF] border-t border-[#333C4D] border-opacity-10">
-                {{ $users->links() }}
-            </div>
-        @endif
     </div>
+
+    @if($users->hasPages())
+        <div class="mt-6">
+            {{ $users->links() }}
+        </div>
+    @endif
 </div>
 @endsection

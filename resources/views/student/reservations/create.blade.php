@@ -218,7 +218,7 @@
 
                         <!-- Recurring Options -->
                         <div class="border-t pt-4">
-                            <div class="flex items-center mb-4">
+                            <!-- <div class="flex items-center mb-4">
                                 <input type="checkbox"
                                        name="is_recurring"
                                        id="is_recurring"
@@ -228,7 +228,7 @@
                                 <label for="is_recurring" class="ml-2 text-sm font-medium text-gray-700">
                                     Make this a recurring reservation
                                 </label>
-                            </div>
+                            </div> -->
 
                             <div x-show="formData.is_recurring" x-transition class="ml-6">
                                 <label for="recurring_type" class="block text-sm font-medium text-gray-700 mb-2">

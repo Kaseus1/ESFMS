@@ -70,7 +70,7 @@ class AdminDashboardController extends Controller
 
         $facilities = Facility::all();
 
-        return view('dashboards.admin', compact(
+        return view('admin.dashboard', compact(
             'stats',
             'recentReservations',
             'upcomingReservations',

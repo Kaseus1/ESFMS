@@ -4,23 +4,24 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
             <h1 class="text-3xl font-bold text-[#172030]">Wallet Management</h1>
             <p class="text-[#333C4D] mt-2 opacity-75">Monitor user balances, top-ups, and transactions</p>
         </div>
         <div class="flex gap-3">
-            <a href="{{ route('admin.wallet.topup') }}" 
-               class="px-4 py-2 bg-[#10B981] text-white rounded-lg hover:bg-[#059669] flex items-center shadow-md transition-all">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                Add Top-up
-            </a>
-        </div>
+<a href="{{ route('admin.wallet.topup') }}"
+class="px-4 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001A4A] flex items-center shadow-md transition-all justify-center w-full md:w-auto">
+<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+</svg>
+Add Top-up
+</a>
+</div>
+
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <div class="bg-[#FFFFFF] rounded-lg shadow-lg p-6 border-l-4 border-[#002366] hover:shadow-xl transition h-full">
             <div class="flex justify-between items-start gap-4">
                 <div class="flex-1 min-w-0">
@@ -83,21 +84,19 @@
     </div>
 
     <div class="bg-[#FFFFFF] rounded-lg shadow-lg mb-6 p-6">
-        <form action="{{ route('admin.wallet.index') }}" method="GET" class="flex flex-wrap gap-4">
-            <div class="flex-1 min-w-[300px]">
-                <div class="relative">
-                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#333C4D] opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <input type="text" 
-                           name="search" 
-                           value="{{ request('search') }}"
-                           placeholder="Search user name or email..."
-                           class="w-full pl-10 pr-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg focus:ring-2 focus:ring-[#002366] focus:border-transparent text-[#172030]">
-                </div>
+        <form action="{{ route('admin.wallet.index') }}" method="GET" class="flex flex-col md:flex-row gap-4">
+            <div class="w-full md:flex-1 relative">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#333C4D] opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" 
+                       name="search" 
+                       value="{{ request('search') }}"
+                       placeholder="Search user name or email..."
+                       class="w-full pl-10 pr-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg focus:ring-2 focus:ring-[#002366] focus:border-transparent text-[#172030]">
             </div>
 
-            <div class="w-full sm:w-48">
+            <div class="w-full md:w-48">
                 <select name="role" class="w-full px-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg focus:ring-2 focus:ring-[#002366] bg-[#FFFFFF] text-[#172030]">
                     <option value="">All Roles</option>
                     <option value="student" {{ request('role') == 'student' ? 'selected' : '' }}>Student</option>
@@ -106,7 +105,7 @@
                 </select>
             </div>
 
-            <div class="w-full sm:w-48">
+            <div class="w-full md:w-48">
                 <select name="balance_filter" class="w-full px-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg focus:ring-2 focus:ring-[#002366] bg-[#FFFFFF] text-[#172030]">
                     <option value="">All Balances</option>
                     <option value="positive" {{ request('balance_filter') == 'positive' ? 'selected' : '' }}>With Balance</option>
@@ -114,17 +113,19 @@
                 </select>
             </div>
 
-            <button type="submit" class="px-6 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001A4A] flex items-center font-medium transition shadow-sm">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-                Filter
-            </button>
-            
-            <a href="{{ route('admin.wallet.index') }}" 
-               class="px-6 py-2 bg-[#333C4D] bg-opacity-20 text-[#333C4D] rounded-lg hover:bg-[#333C4D] hover:bg-opacity-30 flex items-center font-medium transition">
-                Reset
-            </a>
+            <div class="flex gap-2 w-full md:w-auto">
+                <button type="submit" class="flex-1 md:flex-none px-6 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001A4A] flex items-center justify-center font-medium transition shadow-sm">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    Filter
+                </button>
+                
+                <a href="{{ route('admin.wallet.index') }}" 
+                   class="flex-1 md:flex-none px-6 py-2 bg-[#333C4D] bg-opacity-20 text-[#333C4D] rounded-lg hover:bg-[#333C4D] hover:bg-opacity-30 flex items-center justify-center font-medium transition">
+                    Reset
+                </a>
+            </div>
         </form>
     </div>
 

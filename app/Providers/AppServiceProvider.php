@@ -3,11 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Laravel\Fortify\Contracts\LoginResponse;
-use App\Http\Responses\LoginResponse as CustomLoginResponse;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\URL;
 use App\View\Composers\AdminComposer;
 
 class AppServiceProvider extends ServiceProvider
@@ -17,8 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Bind our custom LoginResponse for role-based redirects
-        $this->app->singleton(LoginResponse::class, CustomLoginResponse::class);
+        //
     }
 
     /**
@@ -26,18 +23,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Force HTTPS only in production (not in local development)
-        if ($this->app->environment('production')) {
+        // FIX: Force HTTPS if APP_URL starts with https (fixes local mixed content issues)
+        if (str_starts_with(config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
-        
+
         // Use Tailwind for pagination
         Paginator::useTailwind();
 
-        // ONLY apply AdminComposer to the actual dashboard view
-        // This prevents dashboard stats from appearing on other admin pages
+        // Apply AdminComposer to the layout so variables are available on ALL admin pages
         View::composer([
-            'dashboards.admin',
+            'layouts.admin', 
         ], AdminComposer::class);
     }
 }

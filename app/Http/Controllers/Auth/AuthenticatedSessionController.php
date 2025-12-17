@@ -46,7 +46,25 @@ class AuthenticatedSessionController extends Controller
         if ($intendedRole === 'admin') {
             if ($user->role !== 'admin') {
                 return back()->withErrors([
-                    'role' => 'Access Denied: This account does not have administrator privileges. Only system administrators can access this portal.',
+                    'email' => 'Access Denied: This account does not have administrator privileges.',
+                ])->onlyInput('email');
+            }
+        }
+
+        // FACULTY LOGIN VERIFICATION (New Addition)
+        if ($intendedRole === 'faculty') {
+            if ($user->role !== 'faculty') {
+                return back()->withErrors([
+                    'email' => 'Access Denied: This login page is restricted to Faculty members only.',
+                ])->onlyInput('email');
+            }
+        }
+        
+        // STUDENT LOGIN VERIFICATION (Optional but consistent)
+        if ($intendedRole === 'student') {
+             if ($user->role !== 'student') {
+                return back()->withErrors([
+                    'email' => 'Access Denied: This login page is restricted to Students only.',
                 ])->onlyInput('email');
             }
         }
@@ -55,13 +73,13 @@ class AuthenticatedSessionController extends Controller
         if ($user->role === 'guest') {
             if ($user->status === 'pending') {
                 return back()->withErrors([
-                    'email' => '⏳ Your guest account is pending approval by an administrator. You will receive an email notification once approved.',
+                    'email' => '⏳ Your guest account is pending approval by an administrator.',
                 ])->onlyInput('email');
             }
 
             if ($user->status === 'rejected') {
                 return back()->withErrors([
-                    'email' => '❌ Your guest account request has been rejected. Please contact support for assistance.',
+                    'email' => '❌ Your guest account request has been rejected.',
                 ])->onlyInput('email');
             }
         }
@@ -111,8 +129,6 @@ class AuthenticatedSessionController extends Controller
                 return redirect()->intended(route('dashboard'));
         }
     }
-
-
 
     /**
      * Destroy an authenticated session.

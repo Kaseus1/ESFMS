@@ -5,14 +5,14 @@
 @section('content')
 <div x-data="facilityDashboard()" x-init="init()" class="min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-[#172030]">Facilities Management</h1>
                 <p class="text-[#333C4D] mt-2 opacity-75">Manage campus facilities, resources, and availability</p>
             </div>
-            <div class="flex gap-3">
+            <div class="flex gap-3 w-full md:w-auto">
                 <a href="{{ route('admin.facilities.create') }}" 
-                   class="px-4 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001A4A] flex items-center shadow-md transition-all">
+                   class="px-4 py-2 bg-[#002366] text-white rounded-lg hover:bg-[#001A4A] flex items-center justify-center shadow-md transition-all w-full md:w-auto">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
@@ -46,16 +46,16 @@
 
         {{-- Filters & Search Bar --}}
         <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <div class="flex flex-col lg:flex-row gap-4">
                 {{-- Search --}}
-                <div class="md:col-span-4">
+                <div class="w-full lg:w-1/3">
                     <label class="block text-sm font-medium text-[#333C4D] mb-2">Search</label>
                     <div class="relative">
                         <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#333C4D] opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                         <input type="text"
-                               placeholder="Search by name, location, or type..."
+                               placeholder="Search by name..."
                                x-model="search"
                                @input.debounce.500ms="fetchFacilities()"
                                class="w-full pl-10 pr-4 py-2 border border-[#333C4D] border-opacity-20 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#002366] text-[#172030]">
@@ -63,7 +63,7 @@
                 </div>
 
                 {{-- Type Filter --}}
-                <div class="md:col-span-3">
+                <div class="w-full md:w-1/2 lg:w-1/4">
                     <label class="block text-sm font-medium text-[#333C4D] mb-2">Facility Type</label>
                     <select x-model="type"
                             @change="fetchFacilities()"
@@ -79,7 +79,7 @@
                 </div>
 
                 {{-- Status Filter --}}
-                <div class="md:col-span-3">
+                <div class="w-full md:w-1/2 lg:w-1/4">
                     <label class="block text-sm font-medium text-[#333C4D] mb-2">Status</label>
                     <select x-model="status"
                             @change="fetchFacilities()"
@@ -91,19 +91,19 @@
                 </div>
 
                 {{-- View Toggle --}}
-                <div class="md:col-span-2">
+                <div class="w-full lg:w-auto lg:flex-1">
                     <label class="block text-sm font-medium text-[#333C4D] mb-2">View</label>
-                    <div class="flex rounded-lg border border-[#333C4D] border-opacity-20 overflow-hidden">
+                    <div class="flex rounded-lg border border-[#333C4D] border-opacity-20 overflow-hidden h-[42px]">
                         <button @click="viewMode = 'grid'"
                                 :class="viewMode === 'grid' ? 'bg-[#002366] text-white' : 'bg-white text-[#333C4D] hover:bg-gray-50'"
-                                class="flex-1 px-4 py-2 transition flex justify-center items-center">
+                                class="flex-1 px-4 transition flex justify-center items-center h-full">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                             </svg>
                         </button>
                         <button @click="viewMode = 'table'"
                                 :class="viewMode === 'table' ? 'bg-[#002366] text-white' : 'bg-white text-[#333C4D] hover:bg-gray-50'"
-                                class="flex-1 px-4 py-2 transition flex justify-center items-center">
+                                class="flex-1 px-4 transition flex justify-center items-center h-full">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
                             </svg>

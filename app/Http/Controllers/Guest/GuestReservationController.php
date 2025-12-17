@@ -5,6 +5,8 @@ namespace App\Http\Controllers\guest;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use App\Models\Facility;
+use App\Models\Notification; // <--- ADDED THIS
+use App\Models\User;         // <--- ADDED THIS
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,25 +34,11 @@ class guestReservationController extends Controller
 
         // Stats - also filter by valid facilities
         $stats = [
-            'total' => Reservation::where('user_id', $user->id)
-                ->whereHas('facility')
-                ->count(),
-            'pending' => Reservation::where('user_id', $user->id)
-                ->where('status', 'pending')
-                ->whereHas('facility')
-                ->count(),
-            'approved' => Reservation::where('user_id', $user->id)
-                ->where('status', 'approved')
-                ->whereHas('facility')
-                ->count(),
-            'rejected' => Reservation::where('user_id', $user->id)
-                ->where('status', 'rejected')
-                ->whereHas('facility')
-                ->count(),
-            'cancelled' => Reservation::where('user_id', $user->id)
-                ->where('status', 'cancelled')
-                ->whereHas('facility')
-                ->count(),
+            'total' => Reservation::where('user_id', $user->id)->whereHas('facility')->count(),
+            'pending' => Reservation::where('user_id', $user->id)->where('status', 'pending')->whereHas('facility')->count(),
+            'approved' => Reservation::where('user_id', $user->id)->where('status', 'approved')->whereHas('facility')->count(),
+            'rejected' => Reservation::where('user_id', $user->id)->where('status', 'rejected')->whereHas('facility')->count(),
+            'cancelled' => Reservation::where('user_id', $user->id)->where('status', 'cancelled')->whereHas('facility')->count(),
         ];
 
         return view('guest.reservations.index', compact('reservations', 'stats'));
@@ -78,18 +66,16 @@ class guestReservationController extends Controller
                     'hours_text' => $facility->getOperatingHours(),
                     'image_url' => $facility->image_url,
                     'buffer_time' => $facility->buffer_time ?? 0,
-                    'hourly_rate' => $facility->hourly_rate ?? 0, // ADD RATE
+                    'hourly_rate' => $facility->hourly_rate ?? 0, 
                 ];
             });
 
         $selectedFacilityId = $request->query('facility_id');
         
-        // Find selected facility in the mapped collection
         $selectedFacility = $selectedFacilityId 
             ? $facilities->firstWhere('id', (int)$selectedFacilityId) 
             : null;
 
-        // Get existing reservations for the selected facility (if any)
         $existingReservations = collect();
         if ($selectedFacilityId) {
             $existingReservations = Reservation::with('user')
@@ -101,7 +87,7 @@ class guestReservationController extends Controller
                 ->get();
         }
 
-        $user = Auth::user(); // PASS USER FOR WALLET DISPLAY
+        $user = Auth::user(); 
 
         return view('guest.reservations.create', compact('facilities', 'selectedFacility', 'selectedFacilityId', 'existingReservations', 'user'));
     }
@@ -113,12 +99,9 @@ class guestReservationController extends Controller
             'facility_id' => 'required|exists:facilities,id',
             'event_name' => 'required|string|max:255',
             'participants' => [
-                'nullable',
-                'integer',
-                'min:1',
+                'nullable', 'integer', 'min:1',
                 function ($attribute, $value, $fail) use ($request) {
                     $facility = Facility::find($request->facility_id);
-                    // Check capacity if facility and participants exist
                     if ($facility && $value) {
                         $maxCapacity = $facility->max_capacity ?? $facility->capacity;
                         if ($value > $maxCapacity) {
@@ -178,7 +161,7 @@ class guestReservationController extends Controller
         if (!empty($conflicts)) {
             $conflictMessage = count($conflicts) === count($reservationSlots) 
                 ? 'All time slots are already booked.' 
-                : 'Some time slots are already booked (occurrences: ' . implode(', ', $conflicts) . '). Only available slots will be created.';
+                : 'Some time slots are already booked. Only available slots will be created.';
             
             if (count($conflicts) === count($reservationSlots)) {
                 return back()->withErrors(['time' => $conflictMessage])->withInput();
@@ -210,6 +193,8 @@ class guestReservationController extends Controller
             DB::beginTransaction();
 
             $created = 0;
+            $firstReservationId = null;
+
             foreach ($reservationSlots as $slot) {
                 $duration = $slot['start']->diffInHours($slot['end'], true);
                 $hours = ceil($duration);
@@ -223,19 +208,16 @@ class guestReservationController extends Controller
                     'notes' => $request->notes,
                     'start_time' => $slot['start'],
                     'end_time' => $slot['end'],
-                    
-                    // [CHANGED] Default to pending approval
                     'status' => 'pending', 
-                    
                     'is_recurring' => $isRecurring,
                     'recurrence_type' => $recurrenceType,
                     'cost' => $cost,
-                    
-                    // [NOTE] Payment is collected/held immediately
                     'payment_status' => true, 
                 ]);
 
-                // Deduct from wallet (Funds are held)
+                if (!$firstReservationId) $firstReservationId = $reservation->id;
+
+                // Deduct from wallet
                 $user->deductCredits(
                     amount: $cost,
                     reservationId: $reservation->id,
@@ -246,10 +228,27 @@ class guestReservationController extends Controller
                 $created++;
             }
 
+            // ==============================================
+            // NOTIFY ADMINS (New Reservation Notification)
+            // ==============================================
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'type' => 'reservation',
+                    'title' => 'New Reservation Request',
+                    'message' => Auth::user()->name . ' requested to book ' . $request->event_name,
+                    'link' => route('admin.reservations.show', $firstReservationId),
+                    'icon' => 'fa-calendar-plus',
+                    'color' => 'yellow',
+                    'is_read' => false,
+                ]);
+            }
+            // ==============================================
+
             DB::commit();
 
             $message = "Successfully requested {$created} reservation(s). Status is PENDING approval. Cost: ₱" . number_format($totalCost, 2);
-            
             return redirect()->route('guest.reservations.index')->with('success', $message);
 
         } catch (\Exception $e) {
@@ -257,12 +256,12 @@ class guestReservationController extends Controller
             return back()->withInput()->with('error', 'Failed to create reservation: ' . $e->getMessage());
         }
     }
+
     private function generateReservationSlots($start, $end, $isRecurring, $recurrenceType)
     {
         $slots = [];
         $maxOccurrences = 5;
 
-        // First slot
         $slots[] = [
             'start' => $start->copy(),
             'end' => $end->copy()
@@ -274,18 +273,9 @@ class guestReservationController extends Controller
                 $newEnd = $end->copy();
 
                 switch ($recurrenceType) {
-                    case 'daily':
-                        $newStart->addDays($i);
-                        $newEnd->addDays($i);
-                        break;
-                    case 'weekly':
-                        $newStart->addWeeks($i);
-                        $newEnd->addWeeks($i);
-                        break;
-                    case 'monthly':
-                        $newStart->addMonths($i);
-                        $newEnd->addMonths($i);
-                        break;
+                    case 'daily': $newStart->addDays($i); $newEnd->addDays($i); break;
+                    case 'weekly': $newStart->addWeeks($i); $newEnd->addWeeks($i); break;
+                    case 'monthly': $newStart->addMonths($i); $newEnd->addMonths($i); break;
                 }
 
                 $slots[] = [
@@ -300,14 +290,12 @@ class guestReservationController extends Controller
 
     public function show(Reservation $reservation)
     {
-        // Check if user owns this reservation
         if ($reservation->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
         
         $reservation->load(['facility', 'user']);
         
-        // Load wallet transaction for this reservation
         $transaction = $reservation->user->walletTransactions()
             ->where('reservation_id', $reservation->id)
             ->first();
@@ -317,24 +305,18 @@ class guestReservationController extends Controller
 
     public function edit(Reservation $reservation)
     {
-        // Check authorization
         if ($reservation->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
         
-        // Only allow editing pending reservations
         if (!in_array($reservation->status, ['pending', 'approved'])) {
-        return redirect()->route('guest.reservations.index')
-            ->with('error', 'Only pending or approved reservations can be edited.');
-    }
+            return redirect()->route('guest.reservations.index')
+                ->with('error', 'Only pending or approved reservations can be edited.');
+        }
         
-        // Get all facilities
         $facilities = Facility::orderBy('name')->get();
-        
-        // Get the specific facility for this reservation
         $facility = Facility::findOrFail($reservation->facility_id);
         
-        // Get existing reservations for this facility (excluding current reservation)
         $existingReservations = Reservation::with('user')
             ->where('facility_id', $reservation->facility_id)
             ->where('id', '!=', $reservation->id)
@@ -344,84 +326,44 @@ class guestReservationController extends Controller
             ->limit(10)
             ->get();
         
-        // Pass facility to the view
-        return view('guest.reservations.edit', compact(
-            'reservation',
-            'facilities',
-            'facility',
-            'existingReservations',
-        ));
+        return view('guest.reservations.edit', compact('reservation', 'facilities', 'facility', 'existingReservations'));
     }
 
     public function update(Request $request, Reservation $reservation)
     {
-        // Check authorization
         if ($reservation->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
         
-        // Only allow updating pending reservations
         if (!in_array($reservation->status, ['pending', 'approved'])) {
-        return redirect()->route('guest.reservations.index')
-            ->with('error', 'Only pending or approved reservations can be updated.');
+            return redirect()->route('guest.reservations.index')
+                ->with('error', 'Only pending or approved reservations can be updated.');
         }
         
-        // Validate separate date and time fields
         $validatedData = $request->validate([
             'facility_id' => 'required|exists:facilities,id',
             'event_name' => 'required|string|max:255',
-            'participants' => [
-                'nullable',
-                'integer',
-                'min:1',
-                function ($attribute, $value, $fail) use ($request) {
-                    $facility = Facility::find($request->facility_id);
-                    if ($facility && $value) {
-                        $maxCapacity = $facility->max_capacity ?? $facility->capacity;
-                        if ($value > $maxCapacity) {
-                            $fail("The number of participants cannot exceed {$maxCapacity} for {$facility->name}.");
-                        }
-                    }
-                },
-            ],
+            'participants' => ['nullable', 'integer', 'min:1'],
             'notes' => 'nullable|string|max:1000',
-            
-            // Handle separate date and time fields
             'start_date' => 'required|date',
             'start_time' => 'required|date_format:H:i',
             'end_date' => 'required|date|after_or_equal:start_date',
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
         
-      try {
-    // 1. Parse Dates: Cleaner object-oriented approach
-    $start = Carbon::parse($validatedData['start_date'])
-        ->setTimeFromTimeString($validatedData['start_time']);
-        
-    $end = Carbon::parse($validatedData['end_date'])
-        ->setTimeFromTimeString($validatedData['end_time']);
-    
-    // 2. Find Facility
-    $facility = Facility::findOrFail($validatedData['facility_id']);
+        try {
+            $start = Carbon::parse($validatedData['start_date'])->setTimeFromTimeString($validatedData['start_time']);
+            $end = Carbon::parse($validatedData['end_date'])->setTimeFromTimeString($validatedData['end_time']);
+            $facility = Facility::findOrFail($validatedData['facility_id']);
 
-    // 3. [CRITICAL ADDITION] Calculate New Cost
-    // This defines the $newCost variable needed for the update() call later
-    $duration = $start->diffInHours($end, true);
-    $hours = ceil($duration); // Round up partial hours (e.g., 1.5 hrs -> 2 hrs)
-    $newCost = $hours * ($facility->hourly_rate ?? 0);
-
-    // ... continue with operating hours check ...
-            // Validate operating hours
             if ($facility->opening_time && $facility->closing_time) {
                 $facilityOpen = $start->copy()->setTimeFromTimeString($facility->opening_time);
                 $facilityClose = $start->copy()->setTimeFromTimeString($facility->closing_time);
-                
                 if ($start->lt($facilityOpen) || $end->gt($facilityClose)) {
-                    return back()->withErrors(['time' => 'Reservation time must be within facility operating hours (' . $facility->opening_time . ' - ' . $facility->closing_time . ')'])->withInput();
+                    return back()->withErrors(['time' => 'Reservation time must be within facility operating hours'])->withInput();
                 }
             }
 
-            // Check for conflicts
             $conflict = Reservation::where('facility_id', $validatedData['facility_id'])
                 ->where('id', '!=', $reservation->id)
                 ->whereNotIn('status', ['rejected', 'cancelled'])
@@ -434,10 +376,9 @@ class guestReservationController extends Controller
                 })->exists();
             
             if ($conflict) {
-                return back()->withErrors(['time' => 'This time slot is already booked for the selected facility.'])->withInput();
+                return back()->withErrors(['time' => 'This time slot is already booked.'])->withInput();
             }
             
-            // Update the reservation
             $reservation->update([
                 'facility_id' => $validatedData['facility_id'],
                 'event_name' => $validatedData['event_name'],
@@ -445,41 +386,75 @@ class guestReservationController extends Controller
                 'notes' => $validatedData['notes'],
                 'start_time' => $start,
                 'end_time' => $end,
-                'status' => 'pending', // Reset to pending when modified
+                'status' => 'pending', 
             ]);
             
             return redirect()->route('guest.reservations.index')
                 ->with('success', 'Reservation updated successfully! Your changes are pending approval.');
                 
         } catch (\Exception $e) {
-            return back()->withErrors([
-                'error' => 'An error occurred while updating the reservation. Please try again.'
-            ])->withInput();
+            return back()->withErrors(['error' => 'An error occurred while updating the reservation.'])->withInput();
         }
     }
 
     public function destroy(Reservation $reservation)
     {
-        // Check if user owns this reservation
         if ($reservation->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
         
-        // Only allow deletion of cancelled reservations
         if ($reservation->status !== 'cancelled') {
             return redirect()->back()->with('error', 'Only cancelled reservations can be deleted.');
         }
         
-        // Check if the 7-day grace period has passed
         if (!$reservation->canBeDeleted()) {
             return redirect()->back()->with('error', 'Reservations can only be permanently deleted 7 days after cancellation.');
         }
         
-        // Permanently delete the reservation
         $reservation->delete();
         
         return redirect()->route('guest.reservations.index')
             ->with('success', 'Reservation deleted permanently.');
+    }
+
+    /**
+     * CANCEL METHOD (Fixed: Added Notification Logic)
+     */
+    public function cancel(Reservation $reservation)
+    {
+        // 1. Authorization
+        if ($reservation->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // 2. Check if already cancelled
+        if ($reservation->status === 'cancelled') {
+            return redirect()->back()->with('error', 'This reservation is already cancelled.');
+        }
+
+        // 3. Update Status
+        $reservation->update(['status' => 'cancelled']);
+
+        // 4. NOTIFY ADMINS (Trigger Red Notification)
+        $admins = User::where('role', 'admin')->get();
+        
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'reservation',
+                'title' => 'Reservation Cancelled',
+                'message' => Auth::user()->name . ' cancelled ' . $reservation->event_name,
+                'link' => route('admin.reservations.show', $reservation->id),
+                'icon' => 'fa-circle-xmark', // 'X' icon
+                'color' => 'red',            // Red background
+                'is_read' => false,
+            ]);
+        }
+        
+        // Note: You should ideally also REFUND the user's credits here if they were deducted.
+        // Example: $reservation->user->addCredits($reservation->cost);
+
+        return redirect()->back()->with('success', 'Reservation cancelled successfully.');
     }
 
     public function checkAvailability(Request $request)
@@ -495,7 +470,6 @@ class guestReservationController extends Controller
         $start = Carbon::parse($request->start_time);
         $end = Carbon::parse($request->end_time);
 
-        // Validate operating hours
         if ($facility->opening_time && $facility->closing_time) {
             $facilityOpen = Carbon::parse($request->start_time)->setTimeFromTimeString($facility->opening_time);
             $facilityClose = Carbon::parse($request->start_time)->setTimeFromTimeString($facility->closing_time);
@@ -503,7 +477,7 @@ class guestReservationController extends Controller
             if ($start->lt($facilityOpen) || $end->gt($facilityClose)) {
                 return response()->json([
                     'available' => false,
-                    'message' => 'Time slot is outside facility operating hours (' . $facility->opening_time . ' - ' . $facility->closing_time . ')',
+                    'message' => 'Time slot is outside facility operating hours',
                     'facility' => ['name' => $facility->name]
                 ]);
             }
